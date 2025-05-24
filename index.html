@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OSON MARKET</title>
 <style>
+  /* Твои стили оставляем без изменений */
   *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
   body{background:#f9f9f9;padding:15px;color:#222;}
   header{text-align:center;margin-bottom:20px;}
@@ -49,23 +50,7 @@
     border-radius:12px;
     margin-bottom:20px;
     box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  }
-  #authPanel input, #authPanel button{
-    padding:10px;
-    margin:5px 0;
-    width:100%;
-    border-radius:6px;
-    border:1px solid #ccc;
-  }
-  #authPanel button{
-    background:#0078d7;
-    color:#fff;
-    border:none;
-    cursor:pointer;
-    font-weight:700;
-  }
-  #authPanel button:hover{
-    background:#005fa3;
+    text-align:center;
   }
   #logoutBtn{
     background:#cc0000;
@@ -93,16 +78,15 @@
 
 <main>
   <section id="authPanel">
-    <div id="authForms">
-      <h2>Авторизация</h2>
-      <input type="text" id="loginInput" placeholder="Логин" autocomplete="username" />
-      <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="current-password" />
-      <button id="loginBtn">Войти</button>
-      <p style="text-align:center;margin:10px 0;">или</p>
-      <input type="text" id="regLogin" placeholder="Новый логин" autocomplete="username" />
-      <input type="password" id="regPassword" placeholder="Новый пароль" autocomplete="new-password" />
-      <button id="registerBtn">Зарегистрироваться</button>
-    </div>
+    <!-- Telegram Login Widget -->
+    <script async src="https://telegram.org/js/telegram-widget.js?15"
+      data-telegram-login="YOUR_BOT_USERNAME"
+      data-size="large"
+      data-userpic="false"
+      data-auth-url="https://yourserver.com/auth/telegram"
+      data-request-access="write">
+    </script>
+
     <div id="userInfo" style="display:none;">
       <p>Вы вошли как: <strong><span id="userNameDisplay"></span></strong></p>
       <button id="logoutBtn">Выйти</button>
@@ -143,7 +127,6 @@
 <script>
 const lsKey = "osonMarketProducts";
 const cartKey = "osonMarketCart";
-const usersKey = "osonMarketUsers";
 const sessionKey = "osonMarketSession";
 
 let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
@@ -153,7 +136,6 @@ let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
   {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"}
 ];
 let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-let users = JSON.parse(localStorage.getItem(usersKey)) || [];
 let sessionUser = JSON.parse(localStorage.getItem(sessionKey)) || null;
 
 const productsContainer=document.getElementById("products");
@@ -164,17 +146,9 @@ const adminForm=document.getElementById("adminForm");
 const notification=document.getElementById("notification");
 
 const authPanel=document.getElementById("authPanel");
-const authForms=document.getElementById("authForms");
 const userInfo=document.getElementById("userInfo");
 const userNameDisplay=document.getElementById("userNameDisplay");
-const loginInput=document.getElementById("loginInput");
-const passwordInput=document.getElementById("passwordInput");
-const loginBtn=document.getElementById("loginBtn");
-const regLogin=document.getElementById("regLogin");
-const regPassword=document.getElementById("regPassword");
-const registerBtn=document.getElementById("registerBtn");
 const logoutBtn=document.getElementById("logoutBtn");
-const adminPanel=document.getElementById("adminPanel");
 
 function showNotification(msg){
   notification.textContent = msg;
@@ -187,9 +161,6 @@ function saveProducts(){
 }
 function saveCart(){
   localStorage.setItem(cartKey, JSON.stringify(cart));
-}
-function saveUsers(){
-  localStorage.setItem(usersKey, JSON.stringify(users));
 }
 function saveSession(){
   localStorage.setItem(sessionKey, JSON.stringify(sessionUser));
@@ -228,4 +199,36 @@ function renderCart(){
   let sum = 0;
   cart.forEach(item => {
     const prod = productsData.find(p => p.id === item.id);
-    const li = document.createElement("
+    const li = document.createElement("li");
+    li.className = "cart-item";
+    li.innerHTML = `
+      <span>${prod.name} — ${prod.price.toLocaleString()} UZS</span>
+      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
+      <button data-id="${item.id}">&times;</button>
+    `;
+    cartList.appendChild(li);
+  });
+  updateCartTotal();
+  attachCartEvents();
+}
+
+function updateCartTotal(){
+  let total = 0;
+  cart.forEach(item => {
+    const prod = productsData.find(p => p.id === item.id);
+    total += prod.price * item.qty;
+  });
+  cartTotal.textContent = `Итого: ${total.toLocaleString()} UZS`;
+}
+
+function attachCartEvents(){
+  cartList.querySelectorAll("input").forEach(input => {
+    input.onchange = () => {
+      const id = +input.dataset.id;
+      const qty = +input.value;
+      if(qty < 1){
+        input.value = 1;
+        return;
+      }
+      const item = cart.find(i => i.id === id);
+      if
