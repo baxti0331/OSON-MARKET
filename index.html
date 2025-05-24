@@ -3,24 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OSON MARKET</title>
+<title>OSON MARKET с Пользователями и Админкой</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
   body{background:#f9f9f9;padding:15px;color:#222;}
   header{text-align:center;margin-bottom:20px;}
-  header input{width:90%;max-width:400px;padding:10px 15px;border-radius:25px;border:1px solid #ccc;}
-  main{display:flex;flex-wrap:wrap;gap:20px;max-width:1200px;margin:0 auto;}
-  #filters,#cart{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
-  #filters{flex:1 1 200px;min-width:200px;}
-  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
+  main{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;}
+  section{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
   #products{flex:3 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;}
-  .product-card{background:#fff;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
+  .product-card{border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
   .product-card:hover{box-shadow:0 10px 20px rgba(0,0,0,0.15);}
   .product-card img{width:100%;border-radius:10px;aspect-ratio:1/1;object-fit:cover;margin-bottom:12px;}
   .product-card h3{font-weight:600;margin-bottom:8px;font-size:1.1rem;flex-grow:1;}
   .product-card p{color:#0078d7;font-weight:700;margin-bottom:12px;}
   .product-card button{background:#0078d7;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;transition:background 0.3s;}
   .product-card button:hover{background:#005fa3;}
+  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
   #cart h2{margin-bottom:10px;font-weight:700;}
   #cart-list{flex-grow:1;overflow-y:auto;list-style:none;padding-right:5px;}
   .cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
@@ -30,19 +28,88 @@
   #cart-total{font-weight:700;font-size:1.2rem;text-align:right;margin:10px 0;color:#0078d7;}
   #checkoutBtn{background:#28a745;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:700;cursor:pointer;transition:background 0.3s;}
   #checkoutBtn:hover{background:#1e7e34;}
-  label,select{display:block;margin-bottom:6px;font-weight:600;}
-  select{width:100%;padding:8px 12px;border-radius:6px;border:1px solid #ccc;}
-  @media(max-width:768px){main{flex-direction:column;}#filters,#cart,#products{width:100%;max-width:100%;}}
+  #adminPanel{flex-basis:100%;margin-top:30px;}
+  #adminPanel h2{margin-bottom:10px;}
+  #adminForm label{display:block;margin-bottom:6px;font-weight:600;}
+  #adminForm input[type="text"], #adminForm input[type="number"], #adminForm select, #adminForm input[type="file"]{
+    width:100%;padding:8px 12px;margin-bottom:12px;border-radius:6px;border:1px solid #ccc;
+  }
+  #adminForm button{
+    background:#0078d7;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:700;transition:background 0.3s;
+  }
+  #adminForm button:hover{background:#005fa3;}
+  #notification{
+    position:fixed;top:20px;right:20px;background:#28a745;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.2);
+    display:none; z-index:1000; font-weight:700;
+  }
+  #authPanel{
+    flex-basis:100%;
+    background:#e9e9e9;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  }
+  #authPanel input, #authPanel button{
+    padding:10px;
+    margin:5px 0;
+    width:100%;
+    border-radius:6px;
+    border:1px solid #ccc;
+  }
+  #authPanel button{
+    background:#0078d7;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    font-weight:700;
+  }
+  #authPanel button:hover{
+    background:#005fa3;
+  }
+  #logoutBtn{
+    background:#cc0000;
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:10px 20px;
+    font-weight:700;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  #logoutBtn:hover{
+    background:#990000;
+  }
+  @media(max-width:768px){
+    main{flex-direction:column;}
+    #cart,#products{max-width:100%;}
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>OSON MARKET</h1>
-  <input type="search" id="search" placeholder="Поиск товаров..." />
+  <h1>OSON MARKET с Пользователями и Админкой</h1>
 </header>
+
 <main>
-  <aside id="filters">
-    <h2>Фильтры</h2>
+  <section id="authPanel">
+    <div id="authForms">
+      <h2>Авторизация</h2>
+      <input type="text" id="loginInput" placeholder="Логин" autocomplete="username" />
+      <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="current-password" />
+      <button id="loginBtn">Войти</button>
+      <p>или</p>
+      <input type="text" id="regLogin" placeholder="Новый логин" autocomplete="username" />
+      <input type="password" id="regPassword" placeholder="Новый пароль" autocomplete="new-password" />
+      <button id="registerBtn">Зарегистрироваться</button>
+    </div>
+    <div id="userInfo" style="display:none;">
+      <p>Вы вошли как: <span id="userNameDisplay"></span></p>
+      <button id="logoutBtn">Выйти</button>
+    </div>
+  </section>
+
+  <section id="filters" style="flex-basis:100%;margin-bottom:20px; display:none;">
     <label for="categoryFilter">Категории:</label>
     <select id="categoryFilter">
       <option value="">Все</option>
@@ -55,116 +122,71 @@
       <option value="asc">По возрастанию</option>
       <option value="desc">По убыванию</option>
     </select>
-  </aside>
-  <section id="products"></section>
-  <section id="cart">
+  </section>
+
+  <section id="products" style="display:none;"></section>
+
+  <section id="cart" style="display:none;">
     <h2>Корзина</h2>
     <ul id="cart-list"><li>Корзина пуста</li></ul>
     <div id="cart-total">Итого: 0 UZS</div>
     <button id="checkoutBtn">Оформить заказ</button>
   </section>
+
+  <section id="adminPanel" style="display:none;">
+    <h2>Панель администратора</h2>
+    <form id="adminForm">
+      <label for="prodName">Название товара</label>
+      <input type="text" id="prodName" required />
+      <label for="prodPrice">Цена (UZS)</label>
+      <input type="number" id="prodPrice" min="1" required />
+      <label for="prodCategory">Категория</label>
+      <select id="prodCategory" required>
+        <option value="">Выберите категорию</option>
+        <option value="sport">Спорт</option>
+        <option value="accessory">Аксессуары</option>
+      </select>
+      <label for="prodImage">Фото товара</label>
+      <input type="file" id="prodImage" accept="image/*" required />
+      <button type="submit">Добавить товар</button>
+    </form>
+  </section>
 </main>
+
+<div id="notification"></div>
+
 <script>
-const productsData=[
+const lsKey = "osonMarketProducts";
+const cartKey = "osonMarketCart";
+const usersKey = "osonMarketUsers";
+const sessionKey = "osonMarketSession";
+
+let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
   {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
   {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
   {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
   {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"}
 ];
-let cart=[];
+let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+let users = JSON.parse(localStorage.getItem(usersKey)) || [];
+let sessionUser = JSON.parse(localStorage.getItem(sessionKey)) || null;
+
 const productsContainer=document.getElementById("products");
 const cartList=document.getElementById("cart-list");
 const cartTotal=document.getElementById("cart-total");
 const categoryFilter=document.getElementById("categoryFilter");
 const sortPrice=document.getElementById("sortPrice");
-const searchInput=document.getElementById("search");
 const checkoutBtn=document.getElementById("checkoutBtn");
+const adminForm=document.getElementById("adminForm");
+const notification=document.getElementById("notification");
 
-function renderProducts(){
-  let filtered=[...productsData];
-  const cat=categoryFilter.value;
-  if(cat) filtered=filtered.filter(p=>p.category===cat);
-  const q=searchInput.value.trim().toLowerCase();
-  if(q) filtered=filtered.filter(p=>p.name.toLowerCase().includes(q));
-  if(sortPrice.value==="asc") filtered.sort((a,b)=>a.price-b.price);
-  else if(sortPrice.value==="desc") filtered.sort((a,b)=>b.price-a.price);
-  productsContainer.innerHTML="";
-  if(filtered.length===0) {
-    productsContainer.innerHTML="<p>Товары не найдены.</p>";
-    return;
-  }
-  filtered.forEach(p=>{
-    const card=document.createElement("div");
-    card.className="product-card";
-    card.innerHTML=`
-      <img src="${p.img}" alt="${p.name}"/>
-      <h3>${p.name}</h3>
-      <p>Цена: ${p.price.toLocaleString()} UZS</p>
-      <button onclick="addToCart(${p.id})">Добавить в корзину</button>`;
-    productsContainer.appendChild(card);
-  });
-}
+const authPanel=document.getElementById("authPanel");
+const authForms=document.getElementById("authForms");
+const userInfo=document.getElementById("userInfo");
+const userNameDisplay=document.getElementById("userNameDisplay");
 
-function addToCart(id){
-  const p=productsData.find(x=>x.id===id);
-  if(!p)return;
-  const item=cart.find(x=>x.product.id===id);
-  if(item)item.quantity++;
-  else cart.push({product:p,quantity:1});
-  renderCart();
-}
-
-function renderCart(){
-  cartList.innerHTML="";
-  if(cart.length===0){
-    cartList.innerHTML="<li>Корзина пуста</li>";
-    cartTotal.textContent="Итого: 0 UZS";
-    return;
-  }
-  let total=0;
-  cart.forEach(({product,quantity},i)=>{
-    total+=product.price*quantity;
-    const li=document.createElement("li");
-    li.className="cart-item";
-    li.innerHTML=`
-      <span>${product.name}</span>
-      <input type="number" min="1" value="${quantity}" data-index="${i}" />
-      <span>${(product.price*quantity).toLocaleString()} UZS</span>
-      <button data-index="${i}">&times;</button>`;
-    cartList.appendChild(li);
-  });
-  cartTotal.textContent=`Итого: ${total.toLocaleString()} UZS`;
-}
-
-cartList.addEventListener("input",e=>{
-  if(e.target.tagName==="INPUT" && e.target.type==="number"){
-    const i=e.target.dataset.index;
-    const val=parseInt(e.target.value);
-    if(val>0){cart[i].quantity=val;renderCart();}
-  }
-});
-
-cartList.addEventListener("click",e=>{
-  if(e.target.tagName==="BUTTON"){
-    const i=e.target.dataset.index;
-    cart.splice(i,1);
-    renderCart();
-  }
-});
-
-categoryFilter.addEventListener("change",renderProducts);
-sortPrice.addEventListener("change",renderProducts);
-searchInput.addEventListener("input",renderProducts);
-checkoutBtn.addEventListener("click",()=>{
-  if(cart.length===0) return alert("Корзина пуста!");
-  alert("Спасибо за заказ!\n"+cartTotal.textContent);
-  cart=[];
-  renderCart();
-  renderProducts();
-});
-
-renderProducts();
-renderCart();
-</script>
-</body>
-</html>
+const loginInput=document.getElementById("loginInput");
+const passwordInput=document.getElementById("passwordInput");
+const loginBtn=document.getElementById("loginBtn");
+const regLogin=document.getElementById("regLogin");
+const regPassword=document.get
