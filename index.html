@@ -228,21 +228,4 @@ function renderCart(){
   let sum = 0;
   cart.forEach(item => {
     const prod = productsData.find(p => p.id === item.id);
-    const li = document.createElement("li");
-    li.className = "cart-item";
-    li.innerHTML = `
-      <span>${prod.name}</span>
-      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
-      <span>${(prod.price * item.qty).toLocaleString()} UZS</span>
-      <button data-id="${item.id}">&times;</button>
-    `;
-    cartList.appendChild(li);
-  sum += prod.price * item.qty;
-  });
-  cartTotal.textContent = `Итого: ${sum.toLocaleString()} UZS`;
-
-  // quantity change
-  cartList.querySelectorAll("input[type=number]").forEach(input=>{
-    input.onchange = () => {
-      let val = parseInt(input.value);
-      if(isNaN(val) || val
+    const li = document.createElement("
