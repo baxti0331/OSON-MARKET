@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OSON MARKET с Пользователями и Админкой</title>
+<title>OSON MARKET</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
   body{background:#f9f9f9;padding:15px;color:#222;}
@@ -88,7 +88,7 @@
 </head>
 <body>
 <header>
-  <h1>OSON MARKET с Пользователями и Админкой</h1>
+  <h1>OSON MARKET</h1>
 </header>
 
 <main>
@@ -98,30 +98,15 @@
       <input type="text" id="loginInput" placeholder="Логин" autocomplete="username" />
       <input type="password" id="passwordInput" placeholder="Пароль" autocomplete="current-password" />
       <button id="loginBtn">Войти</button>
-      <p>или</p>
+      <p style="text-align:center;margin:10px 0;">или</p>
       <input type="text" id="regLogin" placeholder="Новый логин" autocomplete="username" />
       <input type="password" id="regPassword" placeholder="Новый пароль" autocomplete="new-password" />
       <button id="registerBtn">Зарегистрироваться</button>
     </div>
     <div id="userInfo" style="display:none;">
-      <p>Вы вошли как: <span id="userNameDisplay"></span></p>
+      <p>Вы вошли как: <strong><span id="userNameDisplay"></span></strong></p>
       <button id="logoutBtn">Выйти</button>
     </div>
-  </section>
-
-  <section id="filters" style="flex-basis:100%;margin-bottom:20px; display:none;">
-    <label for="categoryFilter">Категории:</label>
-    <select id="categoryFilter">
-      <option value="">Все</option>
-      <option value="sport">Спорт</option>
-      <option value="accessory">Аксессуары</option>
-    </select>
-    <label for="sortPrice">Сортировка по цене:</label>
-    <select id="sortPrice">
-      <option value="">Без сортировки</option>
-      <option value="asc">По возрастанию</option>
-      <option value="desc">По убыванию</option>
-    </select>
   </section>
 
   <section id="products" style="display:none;"></section>
@@ -174,8 +159,6 @@ let sessionUser = JSON.parse(localStorage.getItem(sessionKey)) || null;
 const productsContainer=document.getElementById("products");
 const cartList=document.getElementById("cart-list");
 const cartTotal=document.getElementById("cart-total");
-const categoryFilter=document.getElementById("categoryFilter");
-const sortPrice=document.getElementById("sortPrice");
 const checkoutBtn=document.getElementById("checkoutBtn");
 const adminForm=document.getElementById("adminForm");
 const notification=document.getElementById("notification");
@@ -184,9 +167,82 @@ const authPanel=document.getElementById("authPanel");
 const authForms=document.getElementById("authForms");
 const userInfo=document.getElementById("userInfo");
 const userNameDisplay=document.getElementById("userNameDisplay");
-
 const loginInput=document.getElementById("loginInput");
 const passwordInput=document.getElementById("passwordInput");
 const loginBtn=document.getElementById("loginBtn");
 const regLogin=document.getElementById("regLogin");
-const regPassword=document.get
+const regPassword=document.getElementById("regPassword");
+const registerBtn=document.getElementById("registerBtn");
+const logoutBtn=document.getElementById("logoutBtn");
+const adminPanel=document.getElementById("adminPanel");
+
+function showNotification(msg){
+  notification.textContent = msg;
+  notification.style.display = "block";
+  setTimeout(() => notification.style.display = "none", 3000);
+}
+
+function saveProducts(){
+  localStorage.setItem(lsKey, JSON.stringify(productsData));
+}
+function saveCart(){
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+}
+function saveUsers(){
+  localStorage.setItem(usersKey, JSON.stringify(users));
+}
+function saveSession(){
+  localStorage.setItem(sessionKey, JSON.stringify(sessionUser));
+}
+
+function renderProducts(){
+  productsContainer.innerHTML = "";
+  productsData.forEach(prod => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+    card.innerHTML = `
+      <img src="${prod.img}" alt="${prod.name}" />
+      <h3>${prod.name}</h3>
+      <p>${prod.price.toLocaleString()} UZS</p>
+      <button data-id="${prod.id}">Добавить в корзину</button>
+    `;
+    productsContainer.appendChild(card);
+  });
+  productsContainer.querySelectorAll("button").forEach(btn=>{
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      addToCart(id);
+    };
+  });
+}
+
+function renderCart(){
+  cartList.innerHTML = "";
+  if(cart.length === 0){
+    cartList.innerHTML = "<li>Корзина пуста</li>";
+    cartTotal.textContent = "Итого: 0 UZS";
+    checkoutBtn.disabled = true;
+    return;
+  }
+  checkoutBtn.disabled = false;
+  let sum = 0;
+  cart.forEach(item => {
+    const prod = productsData.find(p => p.id === item.id);
+    const li = document.createElement("li");
+    li.className = "cart-item";
+    li.innerHTML = `
+      <span>${prod.name}</span>
+      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
+      <span>${(prod.price * item.qty).toLocaleString()} UZS</span>
+      <button data-id="${item.id}">&times;</button>
+    `;
+    cartList.appendChild(li);
+  sum += prod.price * item.qty;
+  });
+  cartTotal.textContent = `Итого: ${sum.toLocaleString()} UZS`;
+
+  // quantity change
+  cartList.querySelectorAll("input[type=number]").forEach(input=>{
+    input.onchange = () => {
+      let val = parseInt(input.value);
+      if(isNaN(val) || val
