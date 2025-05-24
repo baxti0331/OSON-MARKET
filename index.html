@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>OSON MARKET</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>OSON MARKET</h1>
+
+  <div class="category">
+    <h2>Одежда для спорта</h2>
+    <div class="product">
+      <p>Спортивная футболка — 99 000 UZS</p>
+      <button onclick="addToCart('Спортивная футболка', 99000)">Добавить</button>
+    </div>
+    <div class="product">
+      <p>Шорты тренировочные — 79 000 UZS</p>
+      <button onclick="addToCart('Шорты тренировочные', 79000)">Добавить</button>
+    </div>
+  </div>
+
+  <div class="category">
+    <h2>Аксессуары</h2>
+    <div class="product">
+      <p>Рюкзак городской — 159 000 UZS</p>
+      <button onclick="addToCart('Рюкзак городской', 159000)">Добавить</button>
+    </div>
+    <div class="product">
+      <p>Бутылка для воды — 49 000 UZS</p>
+      <button onclick="addToCart('Бутылка для воды', 49000)">Добавить</button>
+    </div>
+  </div>
+
+  <button class="checkout" onclick="checkout()">🛒 Оформить заказ</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
