@@ -1,174 +1,104 @@
-const cart = {};
-
-let products = [
-  {
-    category: 'Одежда для спорта',
-    items: [
-      { name: 'Спортивная футболка', price: 99000, photo: 'https://via.placeholder.com/150' },
-      { name: 'Шорты тренировочные', price: 79000, photo: 'https://via.placeholder.com/150' },
-    ],
-  },
-  {
-    category: 'Аксессуары',
-    items: [
-      { name: 'Рюкзак городской', price: 159000, photo: 'https://via.placeholder.com/150' },
-      { name: 'Бутылка для воды', price: 49000, photo: 'https://via.placeholder.com/150' },
-    ],
-  },
-];
-
-// Рендерим товары в #products-container
-function renderProducts() {
-  const container = document.getElementById('products-container');
-  container.innerHTML = '';
-
-  products.forEach(({ category, items }) => {
-    const catDiv = document.createElement('div');
-    catDiv.className = 'category';
-
-    const catTitle = document.createElement('h2');
-    catTitle.textContent = category;
-    catDiv.appendChild(catTitle);
-
-    items.forEach(({ name, price, photo }) => {
-      const prodDiv = document.createElement('div');
-      prodDiv.className = 'product';
-
-      const img = document.createElement('img');
-      img.src = photo;
-      img.alt = name;
-
-      const p = document.createElement('p');
-      p.textContent = `${name} — ${price.toLocaleString()} UZS`;
-
-      const btn = document.createElement('button');
-      btn.textContent = 'Добавить';
-      btn.onclick = () => addToCart(name, price);
-
-      prodDiv.appendChild(img);
-      prodDiv.appendChild(p);
-      prodDiv.appendChild(btn);
-
-      catDiv.appendChild(prodDiv);
-    });
-
-    container.appendChild(catDiv);
-  });
-}
+const cart = [];
+const cartContainer = document.getElementById('cart-container');
+const cartItemsUl = document.getElementById('cart-items');
+const totalPriceSpan = document.getElementById('total-price');
+const productsContainer = document.getElementById('products-container');
 
 function addToCart(name, price) {
-  if (cart[name]) {
-    cart[name].quantity += 1;
-  } else {
-    cart[name] = { price: price, quantity: 1 };
-  }
-  updateCartDisplay();
+  cart.push({ name, price });
+  updateCartUI();
 }
 
-function getTotal() {
-  let total = 0;
-  for (const key in cart) {
-    total += cart[key].price * cart[key].quantity;
-  }
-  return total;
-}
-
-function updateCartDisplay() {
-  const container = document.getElementById('cart-container');
-  if (Object.keys(cart).length === 0) {
-    container.innerHTML = 'Корзина пуста';
+function updateCartUI() {
+  if (cart.length === 0) {
+    cartContainer.style.display = 'none';
     return;
   }
-
-  let html = '<ul>';
-  for (const key in cart) {
-    html += `<li>
-      <b>${key}</b> — ${cart[key].quantity} шт. — ${(cart[key].price * cart[key].quantity).toLocaleString()} UZS
-      <button onclick="changeQuantity('${key}', 1)" style="margin-left:10px;">➕</button>
-      <button onclick="changeQuantity('${key}', -1)" style="margin-left:5px;">➖</button>
-      <button onclick="removeItem('${key}')" style="margin-left:5px; color:red;">✖</button>
-    </li>`;
-  }
-  html += '</ul>';
-  html += `<b>Итого: ${getTotal().toLocaleString()} UZS</b>`;
-  container.innerHTML = html;
-}
-
-function changeQuantity(name, delta) {
-  if (!cart[name]) return;
-  cart[name].quantity += delta;
-  if (cart[name].quantity <= 0) {
-    delete cart[name];
-  }
-  updateCartDisplay();
-}
-
-function removeItem(name) {
-  delete cart[name];
-  updateCartDisplay();
+  cartContainer.style.display = 'block';
+  cartItemsUl.innerHTML = '';
+  let total = 0;
+  cart.forEach((item, i) => {
+    total += item.price;
+    const li = document.createElement('li');
+    li.textContent = `${item.name} — ${item.price} UZS`;
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '×';
+    removeBtn.title = 'Удалить';
+    removeBtn.onclick = () => {
+      cart.splice(i, 1);
+      updateCartUI();
+    };
+    li.appendChild(removeBtn);
+    cartItemsUl.appendChild(li);
+  });
+  totalPriceSpan.textContent = total.toLocaleString();
 }
 
 function checkout() {
-  if (Object.keys(cart).length === 0) {
+  if (cart.length === 0) {
     alert('Корзина пуста!');
     return;
   }
-  let message = 'Ваш заказ:\n';
-  for (const key in cart) {
-    message += `${key} — ${cart[key].quantity} шт. — ${(cart[key].price * cart[key].quantity).toLocaleString()} UZS\n`;
-  }
-  message += `\nИтого: ${getTotal().toLocaleString()} UZS\n\nСпасибо за покупку!`;
-
-  alert(message);
-
-  // Очистка корзины
-  for (const key in cart) {
-    delete cart[key];
-  }
-  updateCartDisplay();
+  alert(`Спасибо за заказ на сумму ${totalPriceSpan.textContent} UZS!`);
+  cart.length = 0;
+  updateCartUI();
 }
 
-// Добавление товара продавцом с загрузкой фото с компьютера
-function addProduct(event) {
-  event.preventDefault();
-  const name = document.getElementById('product-name').value.trim();
-  const price = Number(document.getElementById('product-price').value);
-  const photoInput = document.getElementById('product-photo');
-  const file = photoInput.files[0];
+/* Добавление товара продавцом */
 
-  if (!name || !price || !file) {
-    alert('Пожалуйста, заполните все поля корректно');
+const addProductForm = document.getElementById('addProductForm');
+
+addProductForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById('productName').value.trim();
+  const price = parseInt(document.getElementById('productPrice').value.trim());
+  const fileInput = document.getElementById('productImage');
+  const file = fileInput.files[0];
+
+  if (!name || isNaN(price) || price <= 0 || !file) {
+    alert('Пожалуйста, заполните все поля корректно.');
     return;
   }
 
   const reader = new FileReader();
-  reader.onload = function(e) {
-    const photoDataUrl = e.target.result;
+  reader.onload = function(event) {
+    const imageUrl = event.target.result;
 
-    // Добавим товар в категорию "Новое" или создадим её
-    let category = products.find(cat => cat.category === 'Новое');
+    // Создаём новый элемент товара
+    const productDiv = document.createElement('div');
+    productDiv.className = 'product';
+
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = name;
+
+    const p = document.createElement('p');
+    p.textContent = `${name} — ${price.toLocaleString()} UZS`;
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Добавить';
+    btn.onclick = () => addToCart(name, price);
+
+    productDiv.appendChild(img);
+    productDiv.appendChild(p);
+    productDiv.appendChild(btn);
+
+    // Добавляем товар в последнюю категорию или создаём новую
+    let category = productsContainer.querySelector('.category:last-child');
     if (!category) {
-      category = { category: 'Новое', items: [] };
-      products.push(category);
+      category = document.createElement('div');
+      category.className = 'category';
+      const h2 = document.createElement('h2');
+      h2.textContent = 'Новые товары';
+      category.appendChild(h2);
+      productsContainer.appendChild(category);
     }
+    category.appendChild(productDiv);
 
-    // Проверка на дубликаты по названию
-    const exists = category.items.find(item => item.name.toLowerCase() === name.toLowerCase());
-    if (exists) {
-      alert('Товар с таким названием уже есть в категории "Новое"');
-      return;
-    }
-
-    category.items.push({ name, price, photo: photoDataUrl });
-    renderProducts();
-
-    document.getElementById('add-product-form').reset();
-    alert('Товар добавлен!');
+    // Сбрасываем форму
+    addProductForm.reset();
   };
 
   reader.readAsDataURL(file);
-}
-
-// Инициализация
-renderProducts();
-updateCartDisplay();
+});
