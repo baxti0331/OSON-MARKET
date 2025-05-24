@@ -1,60 +1,170 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>OSON MARKET</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OSON MARKET</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
+  body{background:#f9f9f9;padding:15px;color:#222;}
+  header{text-align:center;margin-bottom:20px;}
+  header input{width:90%;max-width:400px;padding:10px 15px;border-radius:25px;border:1px solid #ccc;}
+  main{display:flex;flex-wrap:wrap;gap:20px;max-width:1200px;margin:0 auto;}
+  #filters,#cart{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+  #filters{flex:1 1 200px;min-width:200px;}
+  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
+  #products{flex:3 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;}
+  .product-card{background:#fff;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
+  .product-card:hover{box-shadow:0 10px 20px rgba(0,0,0,0.15);}
+  .product-card img{width:100%;border-radius:10px;aspect-ratio:1/1;object-fit:cover;margin-bottom:12px;}
+  .product-card h3{font-weight:600;margin-bottom:8px;font-size:1.1rem;flex-grow:1;}
+  .product-card p{color:#0078d7;font-weight:700;margin-bottom:12px;}
+  .product-card button{background:#0078d7;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;transition:background 0.3s;}
+  .product-card button:hover{background:#005fa3;}
+  #cart h2{margin-bottom:10px;font-weight:700;}
+  #cart-list{flex-grow:1;overflow-y:auto;list-style:none;padding-right:5px;}
+  .cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
+  .cart-item span{flex-grow:1;overflow-wrap:anywhere;}
+  .cart-item input{width:50px;margin:0 10px;padding:4px;border-radius:6px;border:1px solid #ccc;text-align:center;}
+  .cart-item button{background:none;border:none;color:#cc0000;font-size:1.4rem;cursor:pointer;user-select:none;padding:0 5px;}
+  #cart-total{font-weight:700;font-size:1.2rem;text-align:right;margin:10px 0;color:#0078d7;}
+  #checkoutBtn{background:#28a745;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:700;cursor:pointer;transition:background 0.3s;}
+  #checkoutBtn:hover{background:#1e7e34;}
+  label,select{display:block;margin-bottom:6px;font-weight:600;}
+  select{width:100%;padding:8px 12px;border-radius:6px;border:1px solid #ccc;}
+  @media(max-width:768px){main{flex-direction:column;}#filters,#cart,#products{width:100%;max-width:100%;}}
+</style>
 </head>
 <body>
-
+<header>
   <h1>OSON MARKET</h1>
-
-  <form id="addProductForm">
-    <input type="text" id="productName" placeholder="Название товара" required />
-    <input type="number" id="productPrice" placeholder="Цена (UZS)" required />
-    <input type="file" id="productImage" accept="image/*" required />
-    <button type="submit">Добавить товар</button>
-  </form>
-
-  <div id="products-container">
-    <div class="category">
-      <h2>Одежда для спорта</h2>
-      <div class="product">
-        <img src="https://via.placeholder.com/100?text=Футболка" alt="Спортивная футболка" />
-        <p>Спортивная футболка — 99 000 UZS</p>
-        <button onclick="addToCart('Спортивная футболка', 99000)">Добавить</button>
-      </div>
-      <div class="product">
-        <img src="https://via.placeholder.com/100?text=Шорты" alt="Шорты тренировочные" />
-        <p>Шорты тренировочные — 79 000 UZS</p>
-        <button onclick="addToCart('Шорты тренировочные', 79000)">Добавить</button>
-      </div>
-    </div>
-
-    <div class="category">
-      <h2>Аксессуары</h2>
-      <div class="product">
-        <img src="https://via.placeholder.com/100?text=Рюкзак" alt="Рюкзак городской" />
-        <p>Рюкзак городской — 159 000 UZS</p>
-        <button onclick="addToCart('Рюкзак городской', 159000)">Добавить</button>
-      </div>
-      <div class="product">
-        <img src="https://via.placeholder.com/100?text=Бутылка" alt="Бутылка для воды" />
-        <p>Бутылка для воды — 49 000 UZS</p>
-        <button onclick="addToCart('Бутылка для воды', 49000)">Добавить</button>
-      </div>
-    </div>
-  </div>
-
-  <button class="checkout" onclick="checkout()">🛒 Оформить заказ</button>
-
-  <div id="cart-container" style="display:none;">
+  <input type="search" id="search" placeholder="Поиск товаров..." />
+</header>
+<main>
+  <aside id="filters">
+    <h2>Фильтры</h2>
+    <label for="categoryFilter">Категории:</label>
+    <select id="categoryFilter">
+      <option value="">Все</option>
+      <option value="sport">Спорт</option>
+      <option value="accessory">Аксессуары</option>
+    </select>
+    <label for="sortPrice">Сортировка по цене:</label>
+    <select id="sortPrice">
+      <option value="">Без сортировки</option>
+      <option value="asc">По возрастанию</option>
+      <option value="desc">По убыванию</option>
+    </select>
+  </aside>
+  <section id="products"></section>
+  <section id="cart">
     <h2>Корзина</h2>
-    <ul id="cart-items"></ul>
-    <p>Итого: <span id="total-price">0</span> UZS</p>
-  </div>
+    <ul id="cart-list"><li>Корзина пуста</li></ul>
+    <div id="cart-total">Итого: 0 UZS</div>
+    <button id="checkoutBtn">Оформить заказ</button>
+  </section>
+</main>
+<script>
+const productsData=[
+  {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
+  {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
+  {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
+  {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"}
+];
+let cart=[];
+const productsContainer=document.getElementById("products");
+const cartList=document.getElementById("cart-list");
+const cartTotal=document.getElementById("cart-total");
+const categoryFilter=document.getElementById("categoryFilter");
+const sortPrice=document.getElementById("sortPrice");
+const searchInput=document.getElementById("search");
+const checkoutBtn=document.getElementById("checkoutBtn");
 
-  <script src="script.js"></script>
+function renderProducts(){
+  let filtered=[...productsData];
+  const cat=categoryFilter.value;
+  if(cat) filtered=filtered.filter(p=>p.category===cat);
+  const q=searchInput.value.trim().toLowerCase();
+  if(q) filtered=filtered.filter(p=>p.name.toLowerCase().includes(q));
+  if(sortPrice.value==="asc") filtered.sort((a,b)=>a.price-b.price);
+  else if(sortPrice.value==="desc") filtered.sort((a,b)=>b.price-a.price);
+  productsContainer.innerHTML="";
+  if(filtered.length===0) {
+    productsContainer.innerHTML="<p>Товары не найдены.</p>";
+    return;
+  }
+  filtered.forEach(p=>{
+    const card=document.createElement("div");
+    card.className="product-card";
+    card.innerHTML=`
+      <img src="${p.img}" alt="${p.name}"/>
+      <h3>${p.name}</h3>
+      <p>Цена: ${p.price.toLocaleString()} UZS</p>
+      <button onclick="addToCart(${p.id})">Добавить в корзину</button>`;
+    productsContainer.appendChild(card);
+  });
+}
+
+function addToCart(id){
+  const p=productsData.find(x=>x.id===id);
+  if(!p)return;
+  const item=cart.find(x=>x.product.id===id);
+  if(item)item.quantity++;
+  else cart.push({product:p,quantity:1});
+  renderCart();
+}
+
+function renderCart(){
+  cartList.innerHTML="";
+  if(cart.length===0){
+    cartList.innerHTML="<li>Корзина пуста</li>";
+    cartTotal.textContent="Итого: 0 UZS";
+    return;
+  }
+  let total=0;
+  cart.forEach(({product,quantity},i)=>{
+    total+=product.price*quantity;
+    const li=document.createElement("li");
+    li.className="cart-item";
+    li.innerHTML=`
+      <span>${product.name}</span>
+      <input type="number" min="1" value="${quantity}" data-index="${i}" />
+      <span>${(product.price*quantity).toLocaleString()} UZS</span>
+      <button data-index="${i}">&times;</button>`;
+    cartList.appendChild(li);
+  });
+  cartTotal.textContent=`Итого: ${total.toLocaleString()} UZS`;
+}
+
+cartList.addEventListener("input",e=>{
+  if(e.target.tagName==="INPUT" && e.target.type==="number"){
+    const i=e.target.dataset.index;
+    const val=parseInt(e.target.value);
+    if(val>0){cart[i].quantity=val;renderCart();}
+  }
+});
+
+cartList.addEventListener("click",e=>{
+  if(e.target.tagName==="BUTTON"){
+    const i=e.target.dataset.index;
+    cart.splice(i,1);
+    renderCart();
+  }
+});
+
+categoryFilter.addEventListener("change",renderProducts);
+sortPrice.addEventListener("change",renderProducts);
+searchInput.addEventListener("input",renderProducts);
+checkoutBtn.addEventListener("click",()=>{
+  if(cart.length===0) return alert("Корзина пуста!");
+  alert("Спасибо за заказ!\n"+cartTotal.textContent);
+  cart=[];
+  renderCart();
+  renderProducts();
+});
+
+renderProducts();
+renderCart();
+</script>
 </body>
 </html>
