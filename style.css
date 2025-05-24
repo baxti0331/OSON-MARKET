@@ -1,0 +1,38 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+h1 {
+  text-align: center;
+  color: #1c1c1c;
+}
+
+.category {
+  margin-bottom: 30px;
+}
+
+.product {
+  margin: 10px 0;
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+button {
+  padding: 6px 12px;
+  margin-top: 5px;
+  background: #0088cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.checkout {
+  width: 100%;
+  margin-top: 20px;
+  background: green;
+  font-weight: bold;
+}
