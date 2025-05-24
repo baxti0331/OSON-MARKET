@@ -3,88 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <title>OSON MARKET</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 0 10px;
-    }
-    .category {
-      margin-bottom: 30px;
-    }
-    .product {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      gap: 15px;
-    }
-    .product img {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    .product p {
-      margin: 0;
-      flex-grow: 1;
-    }
-    button {
-      cursor: pointer;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 3px;
-      background-color: #007bff;
-      color: white;
-      font-size: 14px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    #cart-container ul {
-      list-style: none;
-      padding-left: 0;
-    }
-    #cart-container li {
-      margin-bottom: 10px;
-    }
-    form input, form button {
-      padding: 7px;
-      margin-right: 10px;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-    form input[type="file"] {
-      padding: 3px;
-    }
-    form button {
-      background-color: #28a745;
-    }
-    form button:hover {
-      background-color: #1e7e34;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <h1>OSON MARKET</h1>
 
-  <h2>Добавить товар (для продавца)</h2>
-  <form id="add-product-form" onsubmit="addProduct(event)">
-    <input type="text" id="product-name" placeholder="Название товара" required />
-    <input type="number" id="product-price" placeholder="Цена (UZS)" min="1" required />
-    <input type="file" id="product-photo" accept="image/*" required />
+  <form id="addProductForm">
+    <input type="text" id="productName" placeholder="Название товара" required />
+    <input type="number" id="productPrice" placeholder="Цена (UZS)" required />
+    <input type="file" id="productImage" accept="image/*" required />
     <button type="submit">Добавить товар</button>
   </form>
 
-  <div id="products-container"></div>
+  <div id="products-container">
+    <div class="category">
+      <h2>Одежда для спорта</h2>
+      <div class="product">
+        <img src="https://via.placeholder.com/100?text=Футболка" alt="Спортивная футболка" />
+        <p>Спортивная футболка — 99 000 UZS</p>
+        <button onclick="addToCart('Спортивная футболка', 99000)">Добавить</button>
+      </div>
+      <div class="product">
+        <img src="https://via.placeholder.com/100?text=Шорты" alt="Шорты тренировочные" />
+        <p>Шорты тренировочные — 79 000 UZS</p>
+        <button onclick="addToCart('Шорты тренировочные', 79000)">Добавить</button>
+      </div>
+    </div>
 
-  <h2>Корзина</h2>
-  <div id="cart-container">Корзина пуста</div>
+    <div class="category">
+      <h2>Аксессуары</h2>
+      <div class="product">
+        <img src="https://via.placeholder.com/100?text=Рюкзак" alt="Рюкзак городской" />
+        <p>Рюкзак городской — 159 000 UZS</p>
+        <button onclick="addToCart('Рюкзак городской', 159000)">Добавить</button>
+      </div>
+      <div class="product">
+        <img src="https://via.placeholder.com/100?text=Бутылка" alt="Бутылка для воды" />
+        <p>Бутылка для воды — 49 000 UZS</p>
+        <button onclick="addToCart('Бутылка для воды', 49000)">Добавить</button>
+      </div>
+    </div>
+  </div>
 
-  <button class="checkout" onclick="checkout()" style="margin-top:20px;">🛒 Оформить заказ</button>
+  <button class="checkout" onclick="checkout()">🛒 Оформить заказ</button>
+
+  <div id="cart-container" style="display:none;">
+    <h2>Корзина</h2>
+    <ul id="cart-items"></ul>
+    <p>Итого: <span id="total-price">0</span> UZS</p>
+  </div>
 
   <script src="script.js"></script>
 </body>
