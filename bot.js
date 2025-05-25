@@ -1,75 +1,82 @@
+
+require('dotenv').config();
 const { Telegraf, Markup } = require('telegraf');
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const db = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = new sqlite3.Database('database.db');
 
-// Инициализация пользователя
-async function initUser(id) {
-  await db.query(`
-    INSERT INTO users (id, balance, autoclick)
-    VALUES ($1, 0, 0)
-    ON CONFLICT (id) DO NOTHING
-  `, [id]);
+db.run(\`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    balance INTEGER DEFAULT 0,
+    autoclick INTEGER DEFAULT 0
+  )
+\`);
+
+function initUser(id) {
+  db.run(
+    \`INSERT OR IGNORE INTO users (id, balance, autoclick) VALUES (?, 0, 0)\`,
+    [id]
+  );
 }
 
-// Команда /start
-bot.start(async (ctx) => {
+bot.start((ctx) => {
   const id = ctx.from.id;
-  await initUser(id);
-  await ctx.reply('🏠 Главное меню:', mainMenu());
+  initUser(id);
+  ctx.reply('🏠 Главное меню:', mainMenu());
 });
 
-// Обработка inline-кнопок
-bot.on('callback_query', async (ctx) => {
+bot.on('callback_query', (ctx) => {
   const action = ctx.callbackQuery.data;
   const id = ctx.from.id;
 
-  await initUser(id);
-  await ctx.answerCbQuery();
+  initUser(id);
+  ctx.answerCbQuery();
 
   if (action === 'earn') {
-    await db.query("UPDATE users SET balance = balance + 1 WHERE id = $1", [id]);
-    const { rows } = await db.query("SELECT balance FROM users WHERE id = $1", [id]);
-    return ctx.editMessageText(`Вы заработали 1 монету! 💰 Всего: ${rows[0].balance}`, mainMenu());
+    db.run(\`UPDATE users SET balance = balance + 1 WHERE id = ?\`, [id], () => {
+      db.get(\`SELECT balance FROM users WHERE id = ?\`, [id], (err, row) => {
+        ctx.editMessageText(\`Вы заработали 1 монету! 💰 Всего: \${row.balance}\`, mainMenu());
+      });
+    });
   }
 
   if (action === 'shop') {
-    return ctx.editMessageText('🛍 Магазин:\n\n1. Купить автокликер — 50 монет', shopMenu());
+    ctx.editMessageText('🛍 Магазин:\n\n1. Купить автокликер — 50 монет', shopMenu());
   }
 
   if (action === 'buy_autoclick') {
-    const { rows } = await db.query("SELECT balance, autoclick FROM users WHERE id = $1", [id]);
-    const user = rows[0];
-    if (user.balance >= 50 && user.autoclick === 0) {
-      await db.query("UPDATE users SET balance = balance - 50, autoclick = 1 WHERE id = $1", [id]);
-      return ctx.editMessageText("✅ Автокликер куплен!", shopMenu());
-    } else {
-      return ctx.editMessageText("❌ Недостаточно монет или уже куплено.", shopMenu());
-    }
+    db.get(\`SELECT balance, autoclick FROM users WHERE id = ?\`, [id], (err, user) => {
+      if (user.balance >= 50 && user.autoclick === 0) {
+        db.run(\`UPDATE users SET balance = balance - 50, autoclick = 1 WHERE id = ?\`, [id], () => {
+          ctx.editMessageText("✅ Автокликер куплен!", shopMenu());
+        });
+      } else {
+        ctx.editMessageText("❌ Недостаточно монет или уже куплено.", shopMenu());
+      }
+    });
   }
 
   if (action === 'upgrades') {
-    return ctx.editMessageText('📈 Улучшения:\n\n- Автокликер работает каждую минуту.', upgradesMenu());
+    ctx.editMessageText('📈 Улучшения:\n\n- Автокликер работает каждую минуту.', upgradesMenu());
   }
 
   if (action === 'profile') {
-    const { rows } = await db.query("SELECT balance, autoclick FROM users WHERE id = $1", [id]);
-    const user = rows[0];
-    return ctx.editMessageText(`👤 Профиль:\n\n💰 Монет: ${user.balance}\n⚙ Автокликер: ${user.autoclick ? 'Вкл' : 'Выкл'}`, profileMenu());
+    db.get(\`SELECT balance, autoclick FROM users WHERE id = ?\`, [id], (err, user) => {
+      ctx.editMessageText(\`👤 Профиль:\n\n💰 Монет: \${user.balance}\n⚙ Автокликер: \${user.autoclick ? 'Вкл' : 'Выкл'}\`, profileMenu());
+    });
   }
 
   if (action === 'back') {
-    return ctx.editMessageText('🏠 Главное меню:', mainMenu());
+    ctx.editMessageText('🏠 Главное меню:', mainMenu());
   }
 });
 
-// Автокликер
-setInterval(async () => {
-  await db.query("UPDATE users SET balance = balance + 1 WHERE autoclick = 1");
+setInterval(() => {
+  db.run(\`UPDATE users SET balance = balance + 1 WHERE autoclick = 1\`);
 }, 60000);
 
-// Меню
 function mainMenu() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('💰 Заработать', 'earn')],
@@ -99,4 +106,4 @@ function profileMenu() {
 }
 
 bot.launch();
-console.log('🤖 Бот с PostgreSQL запущен!');
+console.log('🤖 Бот с SQLite запущен!');
