@@ -2,256 +2,338 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Игра: Змейка</title>
+<title>Мини Платформер</title>
 <style>
   body {
     margin: 0;
-    background: linear-gradient(135deg, #4caf50, #087f23);
+    background: linear-gradient(to bottom, #87ceeb, #e0f7fa);
+    overflow: hidden;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    user-select: none;
-    height: 100vh;
-    color: #fff;
   }
-  h1 {
-    margin: 15px 0 5px 0;
-  }
-  #gameContainer {
-    position: relative;
-    margin-top: 10px;
-    background: #222;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.7);
-  }
-  #gameCanvas {
-    background: #111;
+  canvas {
     display: block;
-    border-radius: 15px;
+    margin: auto;
+    background: #cceeff;
+    border: 3px solid #333;
+    box-shadow: 0 0 20px #66aaff;
   }
   #score {
-    margin-top: 15px;
+    position: absolute;
+    top: 15px;
+    left: 15px;
     font-size: 24px;
-  }
-  #controls {
-    margin-top: 20px;
-    display: grid;
-    grid-template-columns: repeat(3, 60px);
-    grid-template-rows: repeat(3, 60px);
-    gap: 10px;
-    user-select: none;
-  }
-  .btn {
-    background: #4caf50;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,128,0,0.6);
-    color: white;
-    font-size: 28px;
+    color: #333;
     font-weight: 700;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  .btn:active {
-    background: #087f23;
-  }
-  .empty {
-    background: transparent;
-    box-shadow: none;
-    cursor: default;
-  }
-  #startBtn {
-    margin-top: 15px;
-    padding: 10px 25px;
-    font-size: 18px;
-    border: none;
-    border-radius: 12px;
-    background: #2196f3;
-    color: white;
-    cursor: pointer;
-    user-select: none;
-    box-shadow: 0 4px 12px rgba(33,150,243,0.6);
-    transition: background 0.3s;
-  }
-  #startBtn:hover {
-    background: #0b7dda;
+    text-shadow: 1px 1px 2px #fff;
   }
 </style>
 </head>
 <body>
-
-<h1>Игра: Змейка</h1>
-
-<div id="gameContainer">
-  <canvas id="gameCanvas" width="320" height="320"></canvas>
-</div>
-
-<div id="score">Очки: 0</div>
-
-<div id="controls">
-  <div class="empty"></div>
-  <div class="btn" data-dir="up">↑</div>
-  <div class="empty"></div>
-  <div class="btn" data-dir="left">←</div>
-  <div class="empty"></div>
-  <div class="btn" data-dir="right">→</div>
-  <div class="empty"></div>
-  <div class="btn" data-dir="down">↓</div>
-  <div class="empty"></div>
-</div>
-
-<button id="startBtn">Начать игру</button>
+<div id="score">Монет: 0</div>
+<canvas id="game" width="800" height="450"></canvas>
 
 <script>
-  const canvas = document.getElementById('gameCanvas');
+(() => {
+  const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
-  const scoreDisplay = document.getElementById('score');
-  const startBtn = document.getElementById('startBtn');
-  const controls = document.getElementById('controls');
+  const W = canvas.width;
+  const H = canvas.height;
 
-  const gridSize = 20;
-  const tileCount = canvas.width / gridSize;
+  // Управление
+  const keys = {};
+  window.addEventListener('keydown', e => keys[e.code] = true);
+  window.addEventListener('keyup', e => keys[e.code] = false);
 
-  let snake = [];
-  let direction = {x: 0, y: 0};
-  let food = {x: 0, y: 0};
+  // Игровые параметры
+  const gravity = 0.5;
   let score = 0;
-  let gameInterval = null;
-  let speed = 150;
 
-  function resetGame() {
-    snake = [{x: 9, y: 9}];
-    direction = {x: 0, y: 0};
-    score = 0;
-    speed = 150;
-    placeFood();
-    scoreDisplay.textContent = `Очки: ${score}`;
-  }
+  // Платформы
+  const platforms = [
+    {x: 0, y: 420, w: 800, h: 30},
+    {x: 150, y: 330, w: 120, h: 20},
+    {x: 350, y: 280, w: 140, h: 20},
+    {x: 580, y: 360, w: 100, h: 20},
+    {x: 700, y: 250, w: 80, h: 20}
+  ];
 
-  function placeFood() {
-    food.x = Math.floor(Math.random() * tileCount);
-    food.y = Math.floor(Math.random() * tileCount);
+  // Монетки
+  const coins = [
+    {x: 180, y: 290, r: 10, collected: false},
+    {x: 400, y: 240, r: 10, collected: false},
+    {x: 620, y: 320, r: 10, collected: false},
+    {x: 730, y: 210, r: 10, collected: false},
+  ];
 
-    // Если еда на змейке, разместить заново
-    for(let part of snake){
-      if(part.x === food.x && part.y === food.y){
-        placeFood();
-        return;
+  // Враг
+  class Enemy {
+    constructor(x, y, w, h, rangeX) {
+      this.x = x;
+      this.y = y;
+      this.w = w;
+      this.h = h;
+      this.rangeX = rangeX;
+      this.startX = x;
+      this.speed = 2;
+      this.direction = 1;
+    }
+    update() {
+      this.x += this.speed * this.direction;
+      if(this.x > this.startX + this.rangeX || this.x < this.startX) {
+        this.direction *= -1;
       }
     }
+    draw() {
+      ctx.fillStyle = 'crimson';
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+      // Глаза
+      ctx.fillStyle = 'white';
+      ctx.fillRect(this.x + 5, this.y + 5, 6, 6);
+      ctx.fillRect(this.x + this.w - 13, this.y + 5, 6, 6);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(this.x + 7, this.y + 7, 2, 2);
+      ctx.fillRect(this.x + this.w - 11, this.y + 7, 2, 2);
+    }
   }
+  const enemy = new Enemy(480, 390, 40, 30, 120);
 
-  function draw() {
-    // Очистить поле
-    ctx.fillStyle = '#111';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Игрок
+  const player = {
+    x: 50,
+    y: 380,
+    w: 40,
+    h: 60,
+    vx: 0,
+    vy: 0,
+    speed: 4,
+    jumping: false,
+    facingRight: true,
+    frame: 0,
+    frameCount: 0,
+  };
 
-    // Нарисовать еду
-    ctx.fillStyle = '#e74c3c';
+  // Анимация игрока (простейшая: цвет и ноги меняются)
+  function drawPlayer(){
+    ctx.save();
+    ctx.translate(player.x + player.w/2, player.y + player.h/2);
+    if(!player.facingRight) ctx.scale(-1,1);
+
+    // Тело
+    ctx.fillStyle = '#0077cc';
+    ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+
+    // Голова
+    ctx.fillStyle = '#ffcc99';
     ctx.beginPath();
-    ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+    ctx.ellipse(0, -player.h/2 + 15, 15, 20, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // Нарисовать змейку
-    for(let i = 0; i < snake.length; i++) {
-      ctx.fillStyle = i === 0 ? '#2ecc71' : '#27ae60';
-      ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 1, gridSize - 1);
-    }
+    // Лицо: глаза
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.ellipse(-7, -player.h/2 + 12, 5, 7, 0, 0, Math.PI*2);
+    ctx.ellipse(7, -player.h/2 + 12, 5, 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.ellipse(-7 + (player.frame % 20 < 10 ? 2 : 0), -player.h/2 + 12, 2, 3, 0, 0, Math.PI*2);
+    ctx.ellipse(7 + (player.frame % 20 < 10 ? 2 : 0), -player.h/2 + 12, 2, 3, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Ноги - анимируем ходьбу
+    ctx.fillStyle = '#004477';
+    let legOffset = (player.frame % 20 < 10) ? 5 : -5;
+    ctx.fillRect(-player.w/2 + 5, player.h/2 - 15, 10, 15);
+    ctx.fillRect(player.w/2 - 15, player.h/2 - 15 + legOffset, 10, 15);
+
+    ctx.restore();
   }
 
-  function update() {
-    if(direction.x === 0 && direction.y === 0) return; // Игра не началась
-
-    // Новая позиция головы
-    let head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
-
-    // Проверка столкновений со стенами
-    if(head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount){
-      gameOver();
-      return;
-    }
-
-    // Проверка столкновений с телом змейки
-    for(let part of snake){
-      if(part.x === head.x && part.y === head.y){
-        gameOver();
-        return;
+  // Коллизия с платформами
+  function platformCollision(px, py, pw, ph, platforms) {
+    for(let plat of platforms){
+      if(px < plat.x + plat.w &&
+         px + pw > plat.x &&
+         py < plat.y + plat.h &&
+         py + ph > plat.y){
+          return plat;
       }
     }
+    return null;
+  }
 
-    snake.unshift(head);
+  // Проверка столкновения прямоугольников
+  function rectIntersect(r1, r2){
+    return !(r2.x > r1.x + r1.w ||
+             r2.x + r2.w < r1.x ||
+             r2.y > r1.y + r1.h ||
+             r2.y + r2.h < r1.y);
+  }
 
-    // Если съели еду
-    if(head.x === food.x && head.y === food.y){
-      score++;
-      scoreDisplay.textContent = `Очки: ${score}`;
-      placeFood();
+  // Проверка столкновения круга с прямоугольником (для монет)
+  function circleRectIntersect(cx, cy, r, rx, ry, rw, rh){
+    let closestX = Math.max(rx, Math.min(cx, rx + rw));
+    let closestY = Math.max(ry, Math.min(cy, ry + rh));
+    let distX = cx - closestX;
+    let distY = cy - closestY;
+    return (distX*distX + distY*distY) < (r*r);
+  }
 
-      // Ускоряем игру каждые 5 очков
-      if(score % 5 === 0 && speed > 50){
-        speed -= 10;
-        clearInterval(gameInterval);
-        gameInterval = setInterval(gameLoop, speed);
-      }
+  // Обновление позиции игрока и логика
+  function update(){
+    // Горизонтальное движение
+    if(keys['ArrowRight'] || keys['KeyD']){
+      player.vx = player.speed;
+      player.facingRight = true;
+    } else if(keys['ArrowLeft'] || keys['KeyA']){
+      player.vx = -player.speed;
+      player.facingRight = false;
     } else {
-      snake.pop();
+      player.vx = 0;
     }
 
-    draw();
+    // Прыжок
+    if((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && !player.jumping){
+      player.vy = -12;
+      player.jumping = true;
+    }
+
+    // Гравитация
+    player.vy += gravity;
+
+    // Новые координаты
+    let newX = player.x + player.vx;
+    let newY = player.y + player.vy;
+
+    // Проверка коллизии по X
+    let collisionX = platformCollision(newX, player.y, player.w, player.h, platforms);
+    if(collisionX){
+      if(player.vx > 0) newX = collisionX.x - player.w;
+      else if(player.vx < 0) newX = collisionX.x + collisionX.w;
+      player.vx = 0;
+    }
+
+    // Проверка коллизии по Y
+    let collisionY = platformCollision(newX, newY, player.w, player.h, platforms);
+    if(collisionY){
+      if(player.vy > 0){
+        newY = collisionY.y - player.h;
+        player.vy = 0;
+        player.jumping = false;
+      } else if(player.vy < 0){
+        newY = collisionY.y + collisionY.h;
+        player.vy = 0;
+      }
+    }
+
+    player.x = newX;
+    player.y = newY;
+
+    // Ограничения по краям канваса
+    if(player.x < 0) player.x = 0;
+    if(player.x + player.w > W) player.x = W - player.w;
+    if(player.y + player.h > H) {
+      // упал - рестарт
+      resetGame();
+    }
+
+    // Обновление врага
+    enemy.update();
+
+    // Столкновение с врагом - рестарт
+    if(rectIntersect(player, enemy)){
+      resetGame();
+    }
+
+    // Сбор монет
+    coins.forEach(c => {
+      if(!c.collected && circleRectIntersect(c.x, c.y, c.r, player.x, player.y, player.w, player.h)){
+        c.collected = true;
+        score++;
+        document.getElementById('score').textContent = `Монет: ${score}`;
+      }
+    });
+
+    player.frameCount++;
+    if(player.frameCount % 5 === 0){
+      player.frame++;
+    }
   }
 
-  function gameLoop() {
+  // Очистка экрана и рисование сцены
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Фон (градиент уже на body, поэтому делаем прозрачный)
+    ctx.fillStyle = 'rgba(204,238,255,0.8)';
+    ctx.fillRect(0, 0, W, H);
+
+    // Платформы
+    ctx.fillStyle = '#774411';
+    platforms.forEach(p => {
+      ctx.fillRect(p.x, p.y, p.w, p.h);
+      // Немного текстуры (дерево)
+      ctx.strokeStyle = '#553300';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(let i = 0; i < p.w; i += 20){
+        ctx.moveTo(p.x + i, p.y);
+        ctx.lineTo(p.x + i + 10, p.y + p.h);
+      }
+      ctx.stroke();
+    });
+
+    // Монетки
+    coins.forEach(c => {
+      if(!c.collected){
+        // Желтый круг с блеском
+        let gradient = ctx.createRadialGradient(c.x, c.y, c.r/4, c.x, c.y, c.r);
+        gradient.addColorStop(0, '#fff8b0');
+        gradient.addColorStop(1, '#f3c623');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
+        ctx.fill();
+
+        // Блеск
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(c.x - c.r/2, c.y - c.r/4);
+        ctx.lineTo(c.x + c.r/3, c.y + c.r/2);
+        ctx.stroke();
+      }
+    });
+
+    // Враг
+    enemy.draw();
+
+    // Игрок
+    drawPlayer();
+  }
+
+  function gameLoop(){
     update();
+    draw();
+    requestAnimationFrame(gameLoop);
   }
 
-  function gameOver() {
-    clearInterval(gameInterval);
-    alert(`Игра окончена! Ваш счёт: ${score}`);
-    startBtn.disabled = false;
-    direction = {x:0, y:0};
+  function resetGame(){
+    player.x = 50;
+    player.y = 380;
+    player.vx = 0;
+    player.vy = 0;
+    player.jumping = false;
+    score = 0;
+    coins.forEach(c => c.collected = false);
+    document.getElementById('score').textContent = `Монет: ${score}`;
   }
 
-  function changeDirection(newDir) {
-    // Запрет на разворот змейки на 180 градусов
-    if((direction.x === -newDir.x && direction.y === -newDir.y) || (direction.x === newDir.x && direction.y === newDir.y)) {
-      return;
-    }
-    direction = newDir;
-  }
+  resetGame();
+  gameLoop();
 
-  startBtn.addEventListener('click', () => {
-    resetGame();
-    startBtn.disabled = true;
-    gameInterval = setInterval(gameLoop, speed);
-  });
-
-  controls.addEventListener('click', (e) => {
-    if(!e.target.classList.contains('btn')) return;
-    const dir = e.target.dataset.dir;
-    if(!dir) return;
-
-    switch(dir){
-      case 'up': changeDirection({x:0, y:-1}); break;
-      case 'down': changeDirection({x:0, y:1}); break;
-      case 'left': changeDirection({x:-1, y:0}); break;
-      case 'right': changeDirection({x:1, y:0}); break;
-    }
-  });
-
-  // Для удобства — управление стрелками с клавиатуры (если используешь на ПК)
-  window.addEventListener('keydown', e => {
-    switch(e.key){
-      case 'ArrowUp': changeDirection({x:0, y:-1}); break;
-      case 'ArrowDown': changeDirection({x:0, y:1}); break;
-      case 'ArrowLeft': changeDirection({x:-1, y:0}); break;
-      case 'ArrowRight': changeDirection({x:1, y:0}); break;
-    }
-  });
+})();
 </script>
-
 </body>
 </html>
