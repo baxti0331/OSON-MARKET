@@ -3,51 +3,66 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Игра: Поймай шарик</title>
+<title>Игра: Змейка</title>
 <style>
   body {
-    margin: 0; 
-    background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+    margin: 0;
+    background: linear-gradient(135deg, #4caf50, #087f23);
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
+    user-select: none;
     height: 100vh;
     color: #fff;
   }
   h1 {
-    margin: 15px 0;
-    user-select: none;
+    margin: 15px 0 5px 0;
   }
-  #gameArea {
+  #gameContainer {
     position: relative;
+    margin-top: 10px;
     background: #222;
-    border-radius: 20px;
-    width: 320px;
-    height: 480px;
-    box-shadow: 0 0 30px rgba(255,255,255,0.3);
-    overflow: hidden;
-    touch-action: manipulation;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
   }
-  #ball {
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    background: radial-gradient(circle at 30% 30%, #ff5252, #b30000);
-    border-radius: 50%;
-    cursor: pointer;
-    user-select: none;
-    box-shadow: 0 0 15px #ff4d4d;
-    transition: box-shadow 0.2s;
-  }
-  #ball:active {
-    box-shadow: 0 0 30px #ff0000;
+  #gameCanvas {
+    background: #111;
+    display: block;
+    border-radius: 15px;
   }
   #score {
     margin-top: 15px;
     font-size: 24px;
+  }
+  #controls {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 10px;
     user-select: none;
+  }
+  .btn {
+    background: #4caf50;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,128,0,0.6);
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .btn:active {
+    background: #087f23;
+  }
+  .empty {
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
   }
   #startBtn {
     margin-top: 15px;
@@ -55,97 +70,187 @@
     font-size: 18px;
     border: none;
     border-radius: 12px;
-    background: #4caf50;
+    background: #2196f3;
     color: white;
     cursor: pointer;
     user-select: none;
-    box-shadow: 0 4px 12px rgba(76,175,80,0.6);
+    box-shadow: 0 4px 12px rgba(33,150,243,0.6);
     transition: background 0.3s;
   }
   #startBtn:hover {
-    background: #388e3c;
-  }
-  #timer {
-    margin-top: 10px;
-    font-size: 20px;
-    user-select: none;
+    background: #0b7dda;
   }
 </style>
 </head>
 <body>
 
-<h1>Поймай шарик!</h1>
-<div id="gameArea">
-  <div id="ball"></div>
+<h1>Игра: Змейка</h1>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="320" height="320"></canvas>
 </div>
+
 <div id="score">Очки: 0</div>
-<div id="timer">Время: 30</div>
+
+<div id="controls">
+  <div class="empty"></div>
+  <div class="btn" data-dir="up">↑</div>
+  <div class="empty"></div>
+  <div class="btn" data-dir="left">←</div>
+  <div class="empty"></div>
+  <div class="btn" data-dir="right">→</div>
+  <div class="empty"></div>
+  <div class="btn" data-dir="down">↓</div>
+  <div class="empty"></div>
+</div>
+
 <button id="startBtn">Начать игру</button>
 
 <script>
-  const gameArea = document.getElementById('gameArea');
-  const ball = document.getElementById('ball');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
   const scoreDisplay = document.getElementById('score');
-  const timerDisplay = document.getElementById('timer');
   const startBtn = document.getElementById('startBtn');
+  const controls = document.getElementById('controls');
 
+  const gridSize = 20;
+  const tileCount = canvas.width / gridSize;
+
+  let snake = [];
+  let direction = {x: 0, y: 0};
+  let food = {x: 0, y: 0};
   let score = 0;
   let gameInterval = null;
-  let countdownInterval = null;
-  let timeLeft = 30; // сек
+  let speed = 150;
 
-  function randomPosition() {
-    const maxX = gameArea.clientWidth - ball.offsetWidth;
-    const maxY = gameArea.clientHeight - ball.offsetHeight;
-    const x = Math.floor(Math.random() * maxX);
-    const y = Math.floor(Math.random() * maxY);
-    return {x, y};
-  }
-
-  function moveBall() {
-    const pos = randomPosition();
-    ball.style.left = pos.x + 'px';
-    ball.style.top = pos.y + 'px';
-  }
-
-  function startGame() {
+  function resetGame() {
+    snake = [{x: 9, y: 9}];
+    direction = {x: 0, y: 0};
     score = 0;
-    timeLeft = 30;
+    speed = 150;
+    placeFood();
     scoreDisplay.textContent = `Очки: ${score}`;
-    timerDisplay.textContent = `Время: ${timeLeft}`;
-    startBtn.disabled = true;
-    ball.style.display = 'block';
-    moveBall();
+  }
 
-    gameInterval = setInterval(moveBall, 1000); // шарик меняет позицию каждую секунду
+  function placeFood() {
+    food.x = Math.floor(Math.random() * tileCount);
+    food.y = Math.floor(Math.random() * tileCount);
 
-    countdownInterval = setInterval(() => {
-      timeLeft--;
-      timerDisplay.textContent = `Время: ${timeLeft}`;
-      if (timeLeft <= 0) {
-        endGame();
+    // Если еда на змейке, разместить заново
+    for(let part of snake){
+      if(part.x === food.x && part.y === food.y){
+        placeFood();
+        return;
       }
-    }, 1000);
+    }
   }
 
-  function endGame() {
+  function draw() {
+    // Очистить поле
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Нарисовать еду
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Нарисовать змейку
+    for(let i = 0; i < snake.length; i++) {
+      ctx.fillStyle = i === 0 ? '#2ecc71' : '#27ae60';
+      ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 1, gridSize - 1);
+    }
+  }
+
+  function update() {
+    if(direction.x === 0 && direction.y === 0) return; // Игра не началась
+
+    // Новая позиция головы
+    let head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+
+    // Проверка столкновений со стенами
+    if(head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount){
+      gameOver();
+      return;
+    }
+
+    // Проверка столкновений с телом змейки
+    for(let part of snake){
+      if(part.x === head.x && part.y === head.y){
+        gameOver();
+        return;
+      }
+    }
+
+    snake.unshift(head);
+
+    // Если съели еду
+    if(head.x === food.x && head.y === food.y){
+      score++;
+      scoreDisplay.textContent = `Очки: ${score}`;
+      placeFood();
+
+      // Ускоряем игру каждые 5 очков
+      if(score % 5 === 0 && speed > 50){
+        speed -= 10;
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, speed);
+      }
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function gameLoop() {
+    update();
+  }
+
+  function gameOver() {
     clearInterval(gameInterval);
-    clearInterval(countdownInterval);
-    ball.style.display = 'none';
-    alert(`Игра окончена! Ваш счет: ${score}`);
+    alert(`Игра окончена! Ваш счёт: ${score}`);
     startBtn.disabled = false;
+    direction = {x:0, y:0};
   }
 
-  ball.addEventListener('click', () => {
-    score++;
-    scoreDisplay.textContent = `Очки: ${score}`;
-    moveBall(); // сразу прыгаем шарик при клике
+  function changeDirection(newDir) {
+    // Запрет на разворот змейки на 180 градусов
+    if((direction.x === -newDir.x && direction.y === -newDir.y) || (direction.x === newDir.x && direction.y === newDir.y)) {
+      return;
+    }
+    direction = newDir;
+  }
+
+  startBtn.addEventListener('click', () => {
+    resetGame();
+    startBtn.disabled = true;
+    gameInterval = setInterval(gameLoop, speed);
   });
 
-  startBtn.addEventListener('click', startGame);
+  controls.addEventListener('click', (e) => {
+    if(!e.target.classList.contains('btn')) return;
+    const dir = e.target.dataset.dir;
+    if(!dir) return;
 
-  // Изначально скрываем шарик
-  ball.style.display = 'none';
+    switch(dir){
+      case 'up': changeDirection({x:0, y:-1}); break;
+      case 'down': changeDirection({x:0, y:1}); break;
+      case 'left': changeDirection({x:-1, y:0}); break;
+      case 'right': changeDirection({x:1, y:0}); break;
+    }
+  });
+
+  // Для удобства — управление стрелками с клавиатуры (если используешь на ПК)
+  window.addEventListener('keydown', e => {
+    switch(e.key){
+      case 'ArrowUp': changeDirection({x:0, y:-1}); break;
+      case 'ArrowDown': changeDirection({x:0, y:1}); break;
+      case 'ArrowLeft': changeDirection({x:-1, y:0}); break;
+      case 'ArrowRight': changeDirection({x:1, y:0}); break;
+    }
+  });
 </script>
 
 </body>
