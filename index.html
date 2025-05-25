@@ -4,74 +4,78 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OSON MARKET</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
-  body{background:#f9f9f9;padding:15px;color:#222;}
-  header{text-align:center;margin-bottom:20px;}
-  main{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;}
-  section{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
-  #products{flex:3 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;}
-  .product-card{border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
-  .product-card:hover{box-shadow:0 10px 20px rgba(0,0,0,0.15);}
-  .product-card img{width:100%;border-radius:10px;aspect-ratio:1/1;object-fit:cover;margin-bottom:12px;}
-  .product-card h3{font-weight:600;margin-bottom:8px;font-size:1.1rem;flex-grow:1;}
-  .product-card p{color:#0078d7;font-weight:700;margin-bottom:12px;}
-  .product-card button{background:#0078d7;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;transition:background 0.3s;}
-  .product-card button:hover{background:#005fa3;}
-  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
-  #cart h2{margin-bottom:10px;font-weight:700;}
-  #cart-list{flex-grow:1;overflow-y:auto;list-style:none;padding-right:5px;}
-  .cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
-  .cart-item span{flex-grow:1;overflow-wrap:anywhere;}
-  .cart-item input{width:50px;margin:0 10px;padding:4px;border-radius:6px;border:1px solid #ccc;text-align:center;}
-  .cart-item button{background:none;border:none;color:#cc0000;font-size:1.4rem;cursor:pointer;user-select:none;padding:0 5px;}
-  #cart-total{font-weight:700;font-size:1.2rem;text-align:right;margin:10px 0;color:#0078d7;}
-  #checkoutBtn{background:#28a745;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:700;cursor:pointer;transition:background 0.3s;}
-  #checkoutBtn:hover{background:#1e7e34;}
-  @media(max-width:768px){
-    main{flex-direction:column;}
-    #cart,#products{max-width:100%;}
-  }
-</style>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <header>
   <h1>OSON MARKET</h1>
 </header>
 
+<div id="searchFilterContainer">
+  <input type="text" id="search" placeholder="Поиск товаров..." />
+  <select id="categoryFilter">
+    <option value="all">Все категории</option>
+  </select>
+</div>
+
 <main>
   <section id="products"></section>
 
   <section id="cart">
-    <h2>Корзина</h2>
+    <h2>Корзина <button id="clearCartBtn" title="Очистить корзину">Очистить</button></h2>
     <ul id="cart-list"><li>Корзина пуста</li></ul>
     <div id="cart-total">Итого: 0 UZS</div>
     <button id="checkoutBtn" disabled>Оформить заказ</button>
   </section>
 </main>
 
+<!-- Модальное окно -->
+<div id="modalOverlay">
+  <div id="modal">
+    <button class="closeBtn" title="Закрыть">&times;</button>
+    <img src="" alt="" id="modalImg" />
+    <h3 id="modalTitle"></h3>
+    <p id="modalDesc"></p>
+    <p><strong>Цена: </strong><span id="modalPrice"></span> UZS</p>
+  </div>
+</div>
+
+<!-- Форма оформления заказа -->
+<form id="orderForm">
+  <h2>Оформление заказа</h2>
+  <label for="nameInput">Имя</label>
+  <input type="text" id="nameInput" required />
+  <label for="phoneInput">Телефон</label>
+  <input type="tel" id="phoneInput" required pattern="\+?\d{10,15}" placeholder="+998912345678" />
+  <label for="addressInput">Адрес доставки</label>
+  <textarea id="addressInput" required></textarea>
+  <button type="submit">Отправить заказ</button>
+</form>
+
+<div id="notification"></div>
+
 <script>
 const productsData = [
-  {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
-  {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
-  {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
-  {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"},
-  {id:5,name:"Кроссовки беговые",price:230000,category:"sport",img:"https://via.placeholder.com/300?text=Кроссовки"},
-  {id:6,name:"Фитнес браслет",price:180000,category:"electronics",img:"https://via.placeholder.com/300?text=Браслет"},
-  {id:7,name:"Спортивная бутылка",price:35000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка+спорт"},
-  {id:8,name:"Йога мат",price:110000,category:"sport",img:"https://via.placeholder.com/300?text=Йога+мат"},
-  {id:9,name:"Наушники Bluetooth",price:130000,category:"electronics",img:"https://via.placeholder.com/300?text=Наушники"},
-  {id:10,name:"Ремень для йоги",price:25000,category:"sport",img:"https://via.placeholder.com/300?text=Ремень+йога"},
-  {id:11,name:"Спортивная куртка",price:150000,category:"sport",img:"https://via.placeholder.com/300?text=Куртка"},
-  {id:12,name:"Очки для плавания",price:45000,category:"sport",img:"https://via.placeholder.com/300?text=Очки"},
-  {id:13,name:"Рюкзак туристический",price:220000,category:"accessory",img:"https://via.placeholder.com/300?text=Туристический+рюкзак"},
-  {id:14,name:"Спортивные перчатки",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Перчатки"},
-  {id:15,name:"Часы спортивные",price:300000,category:"electronics",img:"https://via.placeholder.com/300?text=Часы"},
-  {id:16,name:"Футболка с логотипом",price:90000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка+логотип"},
-  {id:17,name:"Спортивные штаны",price:120000,category:"sport",img:"https://via.placeholder.com/300?text=Штаны"},
-  {id:18,name:"Массажный ролик",price:70000,category:"sport",img:"https://via.placeholder.com/300?text=Массажный+ролик"},
-  {id:19,name:"Спортивный рюкзак",price:125000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак+спорт"},
-  {id:20,name:"Кепка спортивная",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Кепка"}
+  {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка",desc:"Удобная и дышащая спортивная футболка."},
+  {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты",desc:"Легкие и комфортные шорты для тренировок."},
+  {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак",desc:"Практичный городской рюкзак с множеством отделений."},
+  {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка",desc:"Бутылка для воды с герметичной крышкой."},
+  {id:5,name:"Кроссовки беговые",price:230000,category:"sport",img:"https://via.placeholder.com/300?text=Кроссовки",desc:"Легкие беговые кроссовки для профессионалов."},
+  {id:6,name:"Фитнес браслет",price:180000,category:"electronics",img:"https://via.placeholder.com/300?text=Браслет",desc:"Фитнес браслет с мониторингом сердечного ритма."},
+  {id:7,name:"Спортивная бутылка",price:35000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка+спорт",desc:"Спортивная бутылка с удобным клапаном."},
+  {id:8,name:"Йога мат",price:110000,category:"sport",img:"https://via.placeholder.com/300?text=Йога+мат",desc:"Качественный мат для йоги с противоскользящей поверхностью."},
+  {id:9,name:"Наушники Bluetooth",price:130000,category:"electronics",img:"https://via.placeholder.com/300?text=Наушники",desc:"Беспроводные наушники с отличным звуком."},
+  {id:10,name:"Ремень для йоги",price:25000,category:"sport",img:"https://via.placeholder.com/300?text=Ремень+йога",desc:"Ремень для растяжки и йоги."},
+  {id:11,name:"Спортивная куртка",price:150000,category:"sport",img:"https://via.placeholder.com/300?text=Куртка",desc:"Легкая спортивная куртка для активного отдыха."},
+  {id:12,name:"Очки для плавания",price:45000,category:"sport",img:"https://via.placeholder.com/300?text=Очки",desc:"Герметичные очки для плавания."},
+  {id:13,name:"Рюкзак туристический",price:220000,category:"accessory",img:"https://via.placeholder.com/300?text=Туристический+рюкзак",desc:"Прочный туристический рюкзак для походов."},
+  {id:14,name:"Спортивные перчатки",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Перчатки",desc:"Перчатки для тренировок с хорошим захватом."},
+  {id:15,name:"Часы спортивные",price:300000,category:"electronics",img:"https://via.placeholder.com/300?text=Часы",desc:"Спортивные часы с GPS и пульсометром."},
+  {id:16,name:"Футболка с логотипом",price:90000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка+логотип",desc:"Футболка с фирменным логотипом."},
+  {id:17,name:"Спортивные штаны",price:120000,category:"sport",img:"https://via.placeholder.com/300?text=Штаны",desc:"Удобные спортивные штаны для тренировок."},
+  {id:18,name:"Массажный ролик",price:70000,category:"sport",img:"https://via.placeholder.com/300?text=Массажный+ролик",desc:"Ролик для массажа и восстановления мышц."},
+  {id:19,name:"Спортивный рюкзак",price:125000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак+спорт",desc:"Рюкзак для спортивного инвентаря."},
+  {id:20,name:"Кепка спортивная",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Кепка",desc:"Спортивная кепка для активного отдыха."}
 ];
 
 let cart = [];
@@ -80,22 +84,91 @@ const productsContainer = document.getElementById("products");
 const cartList = document.getElementById("cart-list");
 const cartTotal = document.getElementById("cart-total");
 const checkoutBtn = document.getElementById("checkoutBtn");
+const clearCartBtn = document.getElementById("clearCartBtn");
+
+const searchInput = document.getElementById("search");
+const categoryFilter = document.getElementById("categoryFilter");
+
+const modalOverlay = document.getElementById("modalOverlay");
+const modal = document.getElementById("modal");
+const modalImg = document.getElementById("modalImg");
+const modalTitle = document.getElementById("modalTitle");
+const modalDesc = document.getElementById("modalDesc");
+const modalPrice = document.getElementById("modalPrice");
+const modalCloseBtn = modal.querySelector(".closeBtn");
+
+const orderForm = document.getElementById("orderForm");
+const nameInput = document.getElementById("nameInput");
+const phoneInput = document.getElementById("phoneInput");
+const addressInput = document.getElementById("addressInput");
+
+const notification = document.getElementById("notification");
+
+// Заполняем фильтр категорий динамически
+function populateCategories() {
+  const categories = [...new Set(productsData.map(p => p.category))];
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+    categoryFilter.appendChild(option);
+  });
+}
+
+// Фильтрация и поиск товаров
+function getFilteredProducts() {
+  const searchTerm = searchInput.value.trim().toLowerCase();
+  const selectedCategory = categoryFilter.value;
+
+  return productsData.filter(product => {
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm);
+    return matchesCategory && matchesSearch;
+  });
+}
 
 function renderProducts(){
   productsContainer.innerHTML = "";
-  productsData.forEach(prod => {
+  const filtered = getFilteredProducts();
+
+  if(filtered.length === 0){
+    productsContainer.innerHTML = "<p>Товары не найдены</p>";
+    return;
+  }
+
+  filtered.forEach(prod => {
     const card = document.createElement("div");
     card.className = "product-card";
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Открыть подробности: ${prod.name}`);
+
     card.innerHTML = `
       <img src="${prod.img}" alt="${prod.name}" />
       <h3>${prod.name}</h3>
       <p>${prod.price.toLocaleString()} UZS</p>
-      <button data-id="${prod.id}">Добавить в корзину</button>
+      <button data-id="${prod.id}" aria-label="Добавить ${prod.name} в корзину">Добавить в корзину</button>
     `;
+
+    // Открытие модального окна при клике на карточку (кроме кнопки)
+    card.addEventListener("click", (e) => {
+      if(e.target.tagName.toLowerCase() !== "button"){
+        openModal(prod);
+      }
+    });
+    card.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        openModal(prod);
+      }
+    });
+
     productsContainer.appendChild(card);
   });
+
   productsContainer.querySelectorAll("button").forEach(btn=>{
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       const id = +btn.dataset.id;
       addToCart(id);
     };
@@ -108,9 +181,11 @@ function renderCart(){
     cartList.innerHTML = "<li>Корзина пуста</li>";
     cartTotal.textContent = "Итого: 0 UZS";
     checkoutBtn.disabled = true;
+    clearCartBtn.disabled = true;
     return;
   }
   checkoutBtn.disabled = false;
+  clearCartBtn.disabled = false;
   let sum = 0;
   cart.forEach(item => {
     const prod = productsData.find(p => p.id === item.id);
@@ -118,10 +193,10 @@ function renderCart(){
     const li = document.createElement("li");
     li.className = "cart-item";
     li.innerHTML = `
-      <span>${prod.name}</span>
-      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
+      <span title="${prod.name}">${prod.name}</span>
+      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" aria-label="Количество ${prod.name}" />
       <span>${(prod.price * item.qty).toLocaleString()} UZS</span>
-      <button data-id="${item.id}">&times;</button>
+      <button data-id="${item.id}" aria-label="Удалить ${prod.name} из корзины">&times;</button>
     `;
     cartList.appendChild(li);
   });
@@ -151,6 +226,7 @@ function addToCart(id){
     cart.push({id: id, qty:1});
   }
   renderCart();
+  showNotification("Товар добавлен в корзину");
 }
 
 function updateQty(id, qty){
@@ -166,14 +242,19 @@ function removeFromCart(id){
   renderCart();
 }
 
-checkoutBtn.onclick = () => {
-  alert("Спасибо за заказ! (функционал оформления заказа пока не реализован)");
-  cart = [];
-  renderCart();
+clearCartBtn.onclick = () => {
+  if(confirm("Вы уверены, что хотите очистить корзину?")){
+    cart = [];
+    renderCart();
+  }
 };
 
-renderProducts();
-renderCart();
-</script>
-</body>
-</html>
+checkoutBtn.onclick = () => {
+  openOrderForm();
+};
+
+// Модальное окно с деталями товара
+function openModal(product){
+  modalImg.src = product.img;
+  modalImg.alt = product.name;
+  modalTitle.textContent
