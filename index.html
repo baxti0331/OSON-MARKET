@@ -5,60 +5,110 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OSON MARKET</title>
 <style>
-  body { font-family: sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
-  h1 { text-align: center; margin-bottom: 20px; }
-  #products { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-  .card { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; }
-  .card img { width: 100%; border-radius: 10px; aspect-ratio: 1 / 1; object-fit: cover; margin-bottom: 10px; }
-  .card h3 { font-size: 1rem; margin-bottom: 5px; text-align: center; }
-  .card p { color: #0078d7; font-weight: bold; margin-bottom: 10px; }
-  .card button { padding: 8px 12px; background: #0078d7; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-  .card button:hover { background: #005fa3; }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
+  body{background:#f9f9f9;padding:15px;color:#222;}
+  header{text-align:center;margin-bottom:20px;}
+  main{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;}
+  section{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
+  #products{flex:3 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;}
+  .product-card{border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
+  .product-card:hover{box-shadow:0 10px 20px rgba(0,0,0,0.15);}
+  .product-card img{width:100%;border-radius:10px;aspect-ratio:1/1;object-fit:cover;margin-bottom:12px;}
+  .product-card h3{font-weight:600;margin-bottom:8px;font-size:1.1rem;flex-grow:1;}
+  .product-card p{color:#0078d7;font-weight:700;margin-bottom:12px;}
+  .product-card button{background:#0078d7;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;transition:background 0.3s;}
+  .product-card button:hover{background:#005fa3;}
+  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
+  #cart h2{margin-bottom:10px;font-weight:700;}
+  #cart-list{flex-grow:1;overflow-y:auto;list-style:none;padding-right:5px;}
+  .cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
+  .cart-item span{flex-grow:1;overflow-wrap:anywhere;}
+  .cart-item input{width:50px;margin:0 10px;padding:4px;border-radius:6px;border:1px solid #ccc;text-align:center;}
+  .cart-item button{background:none;border:none;color:#cc0000;font-size:1.4rem;cursor:pointer;user-select:none;padding:0 5px;}
+  #cart-total{font-weight:700;font-size:1.2rem;text-align:right;margin:10px 0;color:#0078d7;}
+  #checkoutBtn{background:#28a745;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:700;cursor:pointer;transition:background 0.3s;}
+  #checkoutBtn:hover{background:#1e7e34;}
+  #adminPanel{flex-basis:100%;margin-top:30px;}
+  #adminPanel h2{margin-bottom:10px;}
+  #adminForm label{display:block;margin-bottom:6px;font-weight:600;}
+  #adminForm input[type="text"], #adminForm input[type="number"], #adminForm select, #adminForm input[type="file"]{
+    width:100%;padding:8px 12px;margin-bottom:12px;border-radius:6px;border:1px solid #ccc;
+  }
+  #adminForm button{
+    background:#0078d7;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:700;transition:background 0.3s;
+  }
+  #adminForm button:hover{background:#005fa3;}
+  #notification{
+    position:fixed;top:20px;right:20px;background:#28a745;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.2);
+    display:none; z-index:1000; font-weight:700;
+  }
+  @media(max-width:768px){
+    main{flex-direction:column;}
+    #cart,#products{max-width:100%;}
+  }
 </style>
 </head>
 <body>
+<header>
   <h1>OSON MARKET</h1>
-  <div id="products"></div>
+</header>
+
+<main>
+  <section id="products"></section>
+
+  <section id="cart" style="display:none;">
+    <h2>Корзина</h2>
+    <ul id="cart-list"><li>Корзина пуста</li></ul>
+    <div id="cart-total">Итого: 0 UZS</div>
+    <button id="checkoutBtn" disabled>Оформить заказ</button>
+  </section>
+
+  <section id="adminPanel">
+    <h2>Панель администратора</h2>
+    <form id="adminForm">
+      <label for="prodName">Название товара</label>
+      <input type="text" id="prodName" required />
+      <label for="prodPrice">Цена (UZS)</label>
+      <input type="number" id="prodPrice" min="1" required />
+      <label for="prodCategory">Категория</label>
+      <select id="prodCategory" required>
+        <option value="">Выберите категорию</option>
+        <option value="sport">Спорт</option>
+        <option value="accessory">Аксессуары</option>
+        <option value="electronics">Электроника</option>
+        <option value="home">Дом</option>
+        <option value="clothing">Одежда</option>
+      </select>
+      <label for="prodImage">Фото товара (ссылка)</label>
+      <input type="text" id="prodImage" placeholder="https://example.com/image.jpg" required />
+      <button type="submit">Добавить товар</button>
+    </form>
+  </section>
+</main>
+
+<div id="notification"></div>
 
 <script>
-  // Массив товаров (пример 20 штук)
-  const products = [
-    {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
-    {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
-    {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
-    {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"},
-    {id:5,name:"Кроссовки беговые",price:299000,category:"sport",img:"https://via.placeholder.com/300?text=Кроссовки"},
-    {id:6,name:"Фитнес-браслет",price:129000,category:"electronics",img:"https://via.placeholder.com/300?text=Фитнес-браслет"},
-    {id:7,name:"Спортивные очки",price:89000,category:"sport",img:"https://via.placeholder.com/300?text=Очки"},
-    {id:8,name:"Кепка летняя",price:35000,category:"clothing",img:"https://via.placeholder.com/300?text=Кепка"},
-    {id:9,name:"Термос металлический",price:70000,category:"accessory",img:"https://via.placeholder.com/300?text=Термос"},
-    {id:10,name:"Йога-мат",price:110000,category:"sport",img:"https://via.placeholder.com/300?text=Йога-мат"},
-    {id:11,name:"Пульсометр",price:210000,category:"electronics",img:"https://via.placeholder.com/300?text=Пульсометр"},
-    {id:12,name:"Рукавички спортивные",price:45000,category:"sport",img:"https://via.placeholder.com/300?text=Рукавички"},
-    {id:13,name:"Спортивная сумка",price:175000,category:"accessory",img:"https://via.placeholder.com/300?text=Сумка"},
-    {id:14,name:"Кофта с капюшоном",price:95000,category:"clothing",img:"https://via.placeholder.com/300?text=Кофта"},
-    {id:15,name:"Наколенники",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Наколенники"},
-    {id:16,name:"Смарт-часы",price:320000,category:"electronics",img:"https://via.placeholder.com/300?text=Смарт-часы"},
-    {id:17,name:"Тренировочные перчатки",price:48000,category:"sport",img:"https://via.placeholder.com/300?text=Перчатки"},
-    {id:18,name:"Футболка с принтом",price:72000,category:"clothing",img:"https://via.placeholder.com/300?text=Футболка+принт"},
-    {id:19,name:"Пояс для фитнеса",price:60000,category:"accessory",img:"https://via.placeholder.com/300?text=Пояс"},
-    {id:20,name:"Наушники спортивные",price:140000,category:"electronics",img:"https://via.placeholder.com/300?text=Наушники"}
-  ];
+const lsKey = "osonMarketProducts";
+const cartKey = "osonMarketCart";
 
-  const container = document.getElementById('products');
-  container.innerHTML = '';
-
-  products.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <img src="${p.img}" alt="${p.name}">
-      <h3>${p.name}</h3>
-      <p>${p.price.toLocaleString()} UZS</p>
-      <button>В корзину</button>
-    `;
-    container.appendChild(card);
-  });
-</script>
-</body>
-</html>
+let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
+  {id:1,name:"Sports T-Shirt",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Sports+T-Shirt"},
+  {id:2,name:"Training Shorts",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Training+Shorts"},
+  {id:3,name:"City Backpack",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Backpack"},
+  {id:4,name:"Water Bottle",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Water+Bottle"},
+  {id:5,name:"Running Shoes",price:210000,category:"sport",img:"https://via.placeholder.com/300?text=Running+Shoes"},
+  {id:6,name:"Baseball Cap",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Baseball+Cap"},
+  {id:7,name:"Yoga Mat",price:85000,category:"sport",img:"https://via.placeholder.com/300?text=Yoga+Mat"},
+  {id:8,name:"Sport Gloves",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Sport+Gloves"},
+  {id:9,name:"Sunglasses",price:120000,category:"accessory",img:"https://via.placeholder.com/300?text=Sunglasses"},
+  {id:10,name:"Fitness Tracker",price:450000,category:"accessory",img:"https://via.placeholder.com/300?text=Fitness+Tracker"},
+  {id:11,name:"Smartphone",price:1500000,category:"electronics",img:"https://via.placeholder.com/300?text=Smartphone"},
+  {id:12,name:"Laptop",price:4000000,category:"electronics",img:"https://via.placeholder.com/300?text=Laptop"},
+  {id:13,name:"Coffee Maker",price:300000,category:"home",img:"https://via.placeholder.com/300?text=Coffee+Maker"},
+  {id:14,name:"Microwave Oven",price:850000,category:"home",img:"https://via.placeholder.com/300?text=Microwave+Oven"},
+  {id:15,name:"Jeans",price:120000,category:"clothing",img:"https://via.placeholder.com/300?text=Jeans"},
+  {id:16,name:"Leather Jacket",price:350000,category:"clothing",img:"https://via.placeholder.com/300?text=Leather+Jacket"},
+  {id:17,name:"Desk Lamp",price:45000,category:"home",img:"https://via.placeholder.com/300?text=Desk+Lamp"},
+  {id:18,name:"Wireless Mouse",price:70000,category:"electronics",img:"https://via.placeholder.com/300?text=Wireless+Mouse"},
+  {id:19,name:"Tennis Racket",price:180000,category:"sport",
