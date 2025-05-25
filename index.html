@@ -2,338 +2,255 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>Мини Платформер</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Платформер с кнопками</title>
 <style>
-  body {
-    margin: 0;
-    background: linear-gradient(to bottom, #87ceeb, #e0f7fa);
-    overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  body, html {
+    margin:0; padding:0; overflow:hidden; background:#222; color:#eee; font-family:sans-serif;
+    user-select:none;
+    -webkit-user-select:none;
+    -ms-user-select:none;
   }
-  canvas {
-    display: block;
-    margin: auto;
-    background: #cceeff;
+  #gameCanvas {
+    display:block;
+    background: linear-gradient(to top, #87ceeb, #f0f8ff);
+    margin:0 auto;
     border: 3px solid #333;
-    box-shadow: 0 0 20px #66aaff;
+    border-radius: 12px;
   }
-  #score {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    font-size: 24px;
-    color: #333;
+  #controls {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    max-width: 90vw;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .btn {
+    background: #0078d7;
+    border-radius: 12px;
+    flex: 1;
+    padding: 20px 0;
+    text-align: center;
     font-weight: 700;
-    text-shadow: 1px 1px 2px #fff;
+    font-size: 1.2rem;
+    user-select:none;
+    touch-action: none;
+    color: white;
+    box-shadow: 0 4px 10px #005fa3;
+    transition: background 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active, .btn.pressed {
+    background: #005fa3;
+    box-shadow: 0 2px 6px #003a66 inset;
   }
 </style>
 </head>
 <body>
-<div id="score">Монет: 0</div>
-<canvas id="game" width="800" height="450"></canvas>
+
+<canvas id="gameCanvas" width="640" height="360"></canvas>
+
+<div id="controls">
+  <div class="btn" id="btn-left">⬅️</div>
+  <div class="btn" id="btn-down">⬇️</div>
+  <div class="btn" id="btn-jump">⏫</div>
+  <div class="btn" id="btn-right">➡️</div>
+</div>
 
 <script>
 (() => {
-  const canvas = document.getElementById('game');
+  const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const W = canvas.width;
-  const H = canvas.height;
 
-  // Управление
-  const keys = {};
-  window.addEventListener('keydown', e => keys[e.code] = true);
-  window.addEventListener('keyup', e => keys[e.code] = false);
-
-  // Игровые параметры
-  const gravity = 0.5;
-  let score = 0;
-
-  // Платформы
-  const platforms = [
-    {x: 0, y: 420, w: 800, h: 30},
-    {x: 150, y: 330, w: 120, h: 20},
-    {x: 350, y: 280, w: 140, h: 20},
-    {x: 580, y: 360, w: 100, h: 20},
-    {x: 700, y: 250, w: 80, h: 20}
-  ];
-
-  // Монетки
-  const coins = [
-    {x: 180, y: 290, r: 10, collected: false},
-    {x: 400, y: 240, r: 10, collected: false},
-    {x: 620, y: 320, r: 10, collected: false},
-    {x: 730, y: 210, r: 10, collected: false},
-  ];
-
-  // Враг
-  class Enemy {
-    constructor(x, y, w, h, rangeX) {
-      this.x = x;
-      this.y = y;
-      this.w = w;
-      this.h = h;
-      this.rangeX = rangeX;
-      this.startX = x;
-      this.speed = 2;
-      this.direction = 1;
-    }
-    update() {
-      this.x += this.speed * this.direction;
-      if(this.x > this.startX + this.rangeX || this.x < this.startX) {
-        this.direction *= -1;
-      }
-    }
-    draw() {
-      ctx.fillStyle = 'crimson';
-      ctx.fillRect(this.x, this.y, this.w, this.h);
-      // Глаза
-      ctx.fillStyle = 'white';
-      ctx.fillRect(this.x + 5, this.y + 5, 6, 6);
-      ctx.fillRect(this.x + this.w - 13, this.y + 5, 6, 6);
-      ctx.fillStyle = 'black';
-      ctx.fillRect(this.x + 7, this.y + 7, 2, 2);
-      ctx.fillRect(this.x + this.w - 11, this.y + 7, 2, 2);
-    }
-  }
-  const enemy = new Enemy(480, 390, 40, 30, 120);
+  const width = canvas.width;
+  const height = canvas.height;
 
   // Игрок
   const player = {
     x: 50,
-    y: 380,
-    w: 40,
-    h: 60,
-    vx: 0,
-    vy: 0,
-    speed: 4,
-    jumping: false,
-    facingRight: true,
-    frame: 0,
-    frameCount: 0,
+    y: 0,
+    width: 40,
+    height: 60,
+    color: '#e63946',
+    dy: 0,
+    dx: 0,
+    speed: 3,
+    jumpForce: 12,
+    onGround: false,
   };
 
-  // Анимация игрока (простейшая: цвет и ноги меняются)
-  function drawPlayer(){
-    ctx.save();
-    ctx.translate(player.x + player.w/2, player.y + player.h/2);
-    if(!player.facingRight) ctx.scale(-1,1);
+  // Гравитация
+  const gravity = 0.6;
 
-    // Тело
-    ctx.fillStyle = '#0077cc';
-    ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+  // Платформы
+  const platforms = [
+    {x: 0, y: height - 40, width: width, height: 40},  // пол
+    {x: 150, y: 260, width: 120, height: 15},
+    {x: 320, y: 220, width: 100, height: 15},
+    {x: 480, y: 180, width: 120, height: 15},
+    {x: 600, y: 140, width: 40, height: 15},
+  ];
 
-    // Голова
-    ctx.fillStyle = '#ffcc99';
-    ctx.beginPath();
-    ctx.ellipse(0, -player.h/2 + 15, 15, 20, 0, 0, Math.PI*2);
-    ctx.fill();
+  // Управление
+  const keys = {
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+  };
 
-    // Лицо: глаза
-    ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.ellipse(-7, -player.h/2 + 12, 5, 7, 0, 0, Math.PI*2);
-    ctx.ellipse(7, -player.h/2 + 12, 5, 7, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.ellipse(-7 + (player.frame % 20 < 10 ? 2 : 0), -player.h/2 + 12, 2, 3, 0, 0, Math.PI*2);
-    ctx.ellipse(7 + (player.frame % 20 < 10 ? 2 : 0), -player.h/2 + 12, 2, 3, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    // Ноги - анимируем ходьбу
-    ctx.fillStyle = '#004477';
-    let legOffset = (player.frame % 20 < 10) ? 5 : -5;
-    ctx.fillRect(-player.w/2 + 5, player.h/2 - 15, 10, 15);
-    ctx.fillRect(player.w/2 - 15, player.h/2 - 15 + legOffset, 10, 15);
-
-    ctx.restore();
-  }
-
-  // Коллизия с платформами
-  function platformCollision(px, py, pw, ph, platforms) {
-    for(let plat of platforms){
-      if(px < plat.x + plat.w &&
-         px + pw > plat.x &&
-         py < plat.y + plat.h &&
-         py + ph > plat.y){
-          return plat;
-      }
+  // Обработка клавиш с клавиатуры
+  window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    switch(e.code){
+      case 'ArrowLeft': keys.left = true; break;
+      case 'ArrowRight': keys.right = true; break;
+      case 'ArrowUp': keys.up = true; break;
+      case 'ArrowDown': keys.down = true; break;
+      case 'Space': keys.up = true; break;
     }
-    return null;
+  });
+  window.addEventListener('keyup', e => {
+    switch(e.code){
+      case 'ArrowLeft': keys.left = false; break;
+      case 'ArrowRight': keys.right = false; break;
+      case 'ArrowUp': keys.up = false; break;
+      case 'ArrowDown': keys.down = false; break;
+      case 'Space': keys.up = false; break;
+    }
+  });
+
+  // Обработка нажатий по кнопкам (для тач)
+  function setBtnHandlers(id, keyName){
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      keys[keyName] = true;
+      btn.classList.add('pressed');
+    }, {passive:false});
+    btn.addEventListener('touchend', e => {
+      e.preventDefault();
+      keys[keyName] = false;
+      btn.classList.remove('pressed');
+    });
+    btn.addEventListener('mousedown', e => {
+      e.preventDefault();
+      keys[keyName] = true;
+      btn.classList.add('pressed');
+    });
+    btn.addEventListener('mouseup', e => {
+      e.preventDefault();
+      keys[keyName] = false;
+      btn.classList.remove('pressed');
+    });
+    btn.addEventListener('mouseleave', e => {
+      keys[keyName] = false;
+      btn.classList.remove('pressed');
+    });
+  }
+  setBtnHandlers('btn-left', 'left');
+  setBtnHandlers('btn-right', 'right');
+  setBtnHandlers('btn-jump', 'up');
+  setBtnHandlers('btn-down', 'down');
+
+  // Функция проверки коллизий с платформами
+  function checkCollision(px, py, pw, ph, platform){
+    return px < platform.x + platform.width &&
+           px + pw > platform.x &&
+           py < platform.y + platform.height &&
+           py + ph > platform.y;
   }
 
-  // Проверка столкновения прямоугольников
-  function rectIntersect(r1, r2){
-    return !(r2.x > r1.x + r1.w ||
-             r2.x + r2.w < r1.x ||
-             r2.y > r1.y + r1.h ||
-             r2.y + r2.h < r1.y);
-  }
-
-  // Проверка столкновения круга с прямоугольником (для монет)
-  function circleRectIntersect(cx, cy, r, rx, ry, rw, rh){
-    let closestX = Math.max(rx, Math.min(cx, rx + rw));
-    let closestY = Math.max(ry, Math.min(cy, ry + rh));
-    let distX = cx - closestX;
-    let distY = cy - closestY;
-    return (distX*distX + distY*distY) < (r*r);
-  }
-
-  // Обновление позиции игрока и логика
+  // Игровой цикл
   function update(){
     // Горизонтальное движение
-    if(keys['ArrowRight'] || keys['KeyD']){
-      player.vx = player.speed;
-      player.facingRight = true;
-    } else if(keys['ArrowLeft'] || keys['KeyA']){
-      player.vx = -player.speed;
-      player.facingRight = false;
+    if(keys.left){
+      player.dx = -player.speed;
+    } else if(keys.right){
+      player.dx = player.speed;
     } else {
-      player.vx = 0;
+      player.dx = 0;
     }
 
     // Прыжок
-    if((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && !player.jumping){
-      player.vy = -12;
-      player.jumping = true;
+    if(keys.up && player.onGround){
+      player.dy = -player.jumpForce;
+      player.onGround = false;
     }
 
     // Гравитация
-    player.vy += gravity;
+    player.dy += gravity;
 
-    // Новые координаты
-    let newX = player.x + player.vx;
-    let newY = player.y + player.vy;
+    // Обновление позиции
+    player.x += player.dx;
+    player.y += player.dy;
 
-    // Проверка коллизии по X
-    let collisionX = platformCollision(newX, player.y, player.w, player.h, platforms);
-    if(collisionX){
-      if(player.vx > 0) newX = collisionX.x - player.w;
-      else if(player.vx < 0) newX = collisionX.x + collisionX.w;
-      player.vx = 0;
-    }
-
-    // Проверка коллизии по Y
-    let collisionY = platformCollision(newX, newY, player.w, player.h, platforms);
-    if(collisionY){
-      if(player.vy > 0){
-        newY = collisionY.y - player.h;
-        player.vy = 0;
-        player.jumping = false;
-      } else if(player.vy < 0){
-        newY = collisionY.y + collisionY.h;
-        player.vy = 0;
-      }
-    }
-
-    player.x = newX;
-    player.y = newY;
-
-    // Ограничения по краям канваса
+    // Границы экрана
     if(player.x < 0) player.x = 0;
-    if(player.x + player.w > W) player.x = W - player.w;
-    if(player.y + player.h > H) {
-      // упал - рестарт
-      resetGame();
+    if(player.x + player.width > width) player.x = width - player.width;
+    if(player.y + player.height > height){
+      player.y = height - player.height;
+      player.dy = 0;
+      player.onGround = true;
     }
 
-    // Обновление врага
-    enemy.update();
-
-    // Столкновение с врагом - рестарт
-    if(rectIntersect(player, enemy)){
-      resetGame();
-    }
-
-    // Сбор монет
-    coins.forEach(c => {
-      if(!c.collected && circleRectIntersect(c.x, c.y, c.r, player.x, player.y, player.w, player.h)){
-        c.collected = true;
-        score++;
-        document.getElementById('score').textContent = `Монет: ${score}`;
+    // Проверка столкновений с платформами
+    player.onGround = false;
+    for(let platform of platforms){
+      if(checkCollision(player.x, player.y + player.dy, player.width, player.height, platform)){
+        if(player.dy > 0){ // падает вниз на платформу
+          player.y = platform.y - player.height;
+          player.dy = 0;
+          player.onGround = true;
+        } else if(player.dy < 0){ // прыжок вверх в платформу
+          player.y = platform.y + platform.height;
+          player.dy = 0;
+        }
       }
-    });
-
-    player.frameCount++;
-    if(player.frameCount % 5 === 0){
-      player.frame++;
+      // Боковые столкновения (упрощённо)
+      if(checkCollision(player.x + player.dx, player.y, player.width, player.height, platform)){
+        if(player.dx > 0){
+          player.x = platform.x - player.width;
+        } else if(player.dx < 0){
+          player.x = platform.x + platform.width;
+        }
+      }
     }
   }
 
-  // Очистка экрана и рисование сцены
   function draw(){
-    ctx.clearRect(0, 0, W, H);
+    // Очистка
+    ctx.clearRect(0, 0, width, height);
 
-    // Фон (градиент уже на body, поэтому делаем прозрачный)
-    ctx.fillStyle = 'rgba(204,238,255,0.8)';
-    ctx.fillRect(0, 0, W, H);
+    // Рисуем фон (градиент уже в css, но можно чуть дополнить)
+    ctx.fillStyle = '#a0d8f7';
+    ctx.fillRect(0, 0, width, height);
 
     // Платформы
-    ctx.fillStyle = '#774411';
-    platforms.forEach(p => {
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-      // Немного текстуры (дерево)
-      ctx.strokeStyle = '#553300';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      for(let i = 0; i < p.w; i += 20){
-        ctx.moveTo(p.x + i, p.y);
-        ctx.lineTo(p.x + i + 10, p.y + p.h);
-      }
-      ctx.stroke();
-    });
-
-    // Монетки
-    coins.forEach(c => {
-      if(!c.collected){
-        // Желтый круг с блеском
-        let gradient = ctx.createRadialGradient(c.x, c.y, c.r/4, c.x, c.y, c.r);
-        gradient.addColorStop(0, '#fff8b0');
-        gradient.addColorStop(1, '#f3c623');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, c.r, 0, Math.PI*2);
-        ctx.fill();
-
-        // Блеск
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(c.x - c.r/2, c.y - c.r/4);
-        ctx.lineTo(c.x + c.r/3, c.y + c.r/2);
-        ctx.stroke();
-      }
-    });
-
-    // Враг
-    enemy.draw();
+    ctx.fillStyle = '#264653';
+    for(let p of platforms){
+      ctx.fillRect(p.x, p.y, p.width, p.height);
+    }
 
     // Игрок
-    drawPlayer();
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
   }
 
-  function gameLoop(){
+  function loop(){
     update();
     draw();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
   }
 
-  function resetGame(){
-    player.x = 50;
-    player.y = 380;
-    player.vx = 0;
-    player.vy = 0;
-    player.jumping = false;
-    score = 0;
-    coins.forEach(c => c.collected = false);
-    document.getElementById('score').textContent = `Монет: ${score}`;
-  }
-
-  resetGame();
-  gameLoop();
+  loop();
 
 })();
 </script>
+
 </body>
 </html>
