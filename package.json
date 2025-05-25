@@ -1,9 +1,15 @@
 {
   "name": "telegram-clicker-bot",
   "version": "1.0.0",
+  "description": "Telegram бот-кликер с PostgreSQL",
   "main": "bot.js",
-  "license": "MIT",
+  "scripts": {
+    "start": "node bot.js"
+  },
   "dependencies": {
+    "pg": "^8.11.1",
     "telegraf": "^4.12.2"
-  }
+  },
+  "author": "",
+  "license": "MIT"
 }
