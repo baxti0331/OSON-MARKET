@@ -9,15 +9,16 @@
   body{background:#f9f9f9;padding:15px;color:#222;}
   header{text-align:center;margin-bottom:20px;}
   main{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:20px;}
+  section{background:#fff;padding:15px;border-radius:12px;box-shadow:0 3px 8px rgba(0,0,0,0.1);}
   #products{flex:3 1 600px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:15px;}
-  .product-card{border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;background:#fff;}
+  .product-card{border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);padding:15px;display:flex;flex-direction:column;transition:box-shadow 0.3s;}
   .product-card:hover{box-shadow:0 10px 20px rgba(0,0,0,0.15);}
   .product-card img{width:100%;border-radius:10px;aspect-ratio:1/1;object-fit:cover;margin-bottom:12px;}
   .product-card h3{font-weight:600;margin-bottom:8px;font-size:1.1rem;flex-grow:1;}
   .product-card p{color:#0078d7;font-weight:700;margin-bottom:12px;}
   .product-card button{background:#0078d7;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;cursor:pointer;transition:background 0.3s;}
   .product-card button:hover{background:#005fa3;}
-  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;background:#fff;padding:15px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+  #cart{flex:1 1 280px;display:flex;flex-direction:column;max-height:600px;}
   #cart h2{margin-bottom:10px;font-weight:700;}
   #cart-list{flex-grow:1;overflow-y:auto;list-style:none;padding-right:5px;}
   .cart-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;}
@@ -26,22 +27,7 @@
   .cart-item button{background:none;border:none;color:#cc0000;font-size:1.4rem;cursor:pointer;user-select:none;padding:0 5px;}
   #cart-total{font-weight:700;font-size:1.2rem;text-align:right;margin:10px 0;color:#0078d7;}
   #checkoutBtn{background:#28a745;color:#fff;border:none;border-radius:12px;padding:15px;font-weight:700;cursor:pointer;transition:background 0.3s;}
-  #checkoutBtn:disabled{background:#94d3a2;cursor:not-allowed;}
-  #checkoutBtn:hover:not(:disabled){background:#1e7e34;}
-  #adminPanel{flex-basis:100%;margin-top:30px;background:#fff;padding:15px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
-  #adminPanel h2{margin-bottom:10px;}
-  #adminForm label{display:block;margin-bottom:6px;font-weight:600;}
-  #adminForm input[type="text"], #adminForm input[type="number"], #adminForm select{
-    width:100%;padding:8px 12px;margin-bottom:12px;border-radius:6px;border:1px solid #ccc;
-  }
-  #adminForm button{
-    background:#0078d7;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:700;transition:background 0.3s;
-  }
-  #adminForm button:hover{background:#005fa3;}
-  #notification{
-    position:fixed;top:20px;right:20px;background:#28a745;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.2);
-    display:none; z-index:1000; font-weight:700;
-  }
+  #checkoutBtn:hover{background:#1e7e34;}
   @media(max-width:768px){
     main{flex-direction:column;}
     #cart,#products{max-width:100%;}
@@ -56,230 +42,138 @@
 <main>
   <section id="products"></section>
 
-  <section id="cart" style="display:none;">
+  <section id="cart">
     <h2>Корзина</h2>
     <ul id="cart-list"><li>Корзина пуста</li></ul>
     <div id="cart-total">Итого: 0 UZS</div>
     <button id="checkoutBtn" disabled>Оформить заказ</button>
   </section>
-
-  <section id="adminPanel">
-    <h2>Панель администратора</h2>
-    <form id="adminForm">
-      <label for="prodName">Название товара</label>
-      <input type="text" id="prodName" required />
-      <label for="prodPrice">Цена (UZS)</label>
-      <input type="number" id="prodPrice" min="1" required />
-      <label for="prodCategory">Категория</label>
-      <select id="prodCategory" required>
-        <option value="">Выберите категорию</option>
-        <option value="sport">Спорт</option>
-        <option value="accessory">Аксессуары</option>
-        <option value="electronics">Электроника</option>
-        <option value="home">Дом</option>
-        <option value="clothing">Одежда</option>
-      </select>
-      <label for="prodImage">Фото товара (ссылка)</label>
-      <input type="text" id="prodImage" placeholder="https://example.com/image.jpg" required />
-      <button type="submit">Добавить товар</button>
-    </form>
-  </section>
 </main>
 
-<div id="notification"></div>
-
 <script>
-(() => {
-  const lsKey = "osonMarketProducts";
-  const cartKey = "osonMarketCart";
+const productsData = [
+  {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
+  {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
+  {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
+  {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"},
+  {id:5,name:"Кроссовки беговые",price:230000,category:"sport",img:"https://via.placeholder.com/300?text=Кроссовки"},
+  {id:6,name:"Фитнес браслет",price:180000,category:"electronics",img:"https://via.placeholder.com/300?text=Браслет"},
+  {id:7,name:"Спортивная бутылка",price:35000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка+спорт"},
+  {id:8,name:"Йога мат",price:110000,category:"sport",img:"https://via.placeholder.com/300?text=Йога+мат"},
+  {id:9,name:"Наушники Bluetooth",price:130000,category:"electronics",img:"https://via.placeholder.com/300?text=Наушники"},
+  {id:10,name:"Ремень для йоги",price:25000,category:"sport",img:"https://via.placeholder.com/300?text=Ремень+йога"},
+  {id:11,name:"Спортивная куртка",price:150000,category:"sport",img:"https://via.placeholder.com/300?text=Куртка"},
+  {id:12,name:"Очки для плавания",price:45000,category:"sport",img:"https://via.placeholder.com/300?text=Очки"},
+  {id:13,name:"Рюкзак туристический",price:220000,category:"accessory",img:"https://via.placeholder.com/300?text=Туристический+рюкзак"},
+  {id:14,name:"Спортивные перчатки",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Перчатки"},
+  {id:15,name:"Часы спортивные",price:300000,category:"electronics",img:"https://via.placeholder.com/300?text=Часы"},
+  {id:16,name:"Футболка с логотипом",price:90000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка+логотип"},
+  {id:17,name:"Спортивные штаны",price:120000,category:"sport",img:"https://via.placeholder.com/300?text=Штаны"},
+  {id:18,name:"Массажный ролик",price:70000,category:"sport",img:"https://via.placeholder.com/300?text=Массажный+ролик"},
+  {id:19,name:"Спортивный рюкзак",price:125000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак+спорт"},
+  {id:20,name:"Кепка спортивная",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Кепка"}
+];
 
-  let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
-    {id:1,name:"Sports T-Shirt",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Sports+T-Shirt"},
-    {id:2,name:"Training Shorts",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Training+Shorts"},
-    {id:3,name:"City Backpack",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Backpack"},
-    {id:4,name:"Water Bottle",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Water+Bottle"},
-    {id:5,name:"Running Shoes",price:210000,category:"sport",img:"https://via.placeholder.com/300?text=Running+Shoes"},
-    {id:6,name:"Baseball Cap",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Baseball+Cap"},
-    {id:7,name:"Yoga Mat",price:85000,category:"sport",img:"https://via.placeholder.com/300?text=Yoga+Mat"},
-    {id:8,name:"Sport Gloves",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Sport+Gloves"},
-    {id:9,name:"Sunglasses",price:120000,category:"accessory",img:"https://via.placeholder.com/300?text=Sunglasses"},
-    {id:10,name:"Fitness Tracker",price:450000,category:"accessory",img:"https://via.placeholder.com/300?text=Fitness+Tracker"},
-    {id:11,name:"Smartphone",price:1500000,category:"electronics",img:"https://via.placeholder.com/300?text=Smartphone"},
-    {id:12,name:"Laptop",price:4000000,category:"electronics",img:"https://via.placeholder.com/300?text=Laptop"},
-    {id:13,name:"Coffee Maker",price:300000,category:"home",img:"https://via.placeholder.com/300?text=Coffee+Maker"},
-    {id:14,name:"Microwave Oven",price:850000,category:"home",img:"https://via.placeholder.com/300?text=Microwave+Oven"},
-    {id:15,name:"Jeans",price:120000,category:"clothing",img:"https://via.placeholder.com/300?text=Jeans"},
-    {id:16,name:"Leather Jacket",price:350000,category:"clothing",img:"https://via.placeholder.com/300?text=Leather+Jacket"},
-    {id:17,name:"Desk Lamp",price:45000,category:"home",img:"https://via.placeholder.com/300?text=Desk+Lamp"},
-    {id:18,name:"Wireless Mouse",price:70000,category:"electronics",img:"https://via.placeholder.com/300?text=Wireless+Mouse"},
-    {id:19,name:"Tennis Racket",price:180000,category:"sport",img:"https://via.placeholder.com/300?text=Tennis+Racket"},
-    {id:20,name:"Office Chair",price:350000,category:"home",img:"https://via.placeholder.com/300?text=Office+Chair"},
-    {id:21,name:"Winter Coat",price:420000,category:"clothing",img:"https://via.placeholder.com/300?text=Winter+Coat"},
-    {id:22,name:"Bluetooth Headphones",price:600000,category:"electronics",img:"https://via.placeholder.com/300?text=Bluetooth+Headphones"},
-    {id:23,name:"Smart Watch",price:1300000,category:"electronics",img:"https://via.placeholder.com/300?text=Smart+Watch"},
-    {id:24,name:"Camping Tent",price:550000,category:"sport",img:"https://via.placeholder.com/300?text=Camping+Tent"},
-    {id:25,name:"Running Socks",price:15000,category:"sport",img:"https://via.placeholder.com/300?text=Running+Socks"},
-    {id:26,name:"Backpack Rain Cover",price:25000,category:"accessory",img:"https://via.placeholder.com/300?text=Rain+Cover"},
-    {id:27,name:"Desk Organizer",price:22000,category:"home",img:"https://via.placeholder.com/300?text=Desk+Organizer"},
-    {id:28,name:"LED TV 40\"",price:2000000,category:"electronics",img:"https://via.placeholder.com/300?text=LED+TV+40\""},
-    {id:29,name:"Sports Water Bottle",price:60000,category:"sport",img:"https://via.placeholder.com/300?text=Sports+Water+Bottle"},
-    {id:30,name:"Winter Gloves",price:35000,category:"clothing",img:"https://via.placeholder.com/300?text=Winter+Gloves"},
-  ];
+let cart = [];
 
-  let cart = JSON.parse(localStorage.getItem(cartKey)) || {};
+const productsContainer = document.getElementById("products");
+const cartList = document.getElementById("cart-list");
+const cartTotal = document.getElementById("cart-total");
+const checkoutBtn = document.getElementById("checkoutBtn");
 
-  const productsEl = document.getElementById("products");
-  const cartEl = document.getElementById("cart");
-  const cartListEl = document.getElementById("cart-list");
-  const cartTotalEl = document.getElementById("cart-total");
-  const checkoutBtn = document.getElementById("checkoutBtn");
-  const adminForm = document.getElementById("adminForm");
-  const notification = document.getElementById("notification");
+function renderProducts(){
+  productsContainer.innerHTML = "";
+  productsData.forEach(prod => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+    card.innerHTML = `
+      <img src="${prod.img}" alt="${prod.name}" />
+      <h3>${prod.name}</h3>
+      <p>${prod.price.toLocaleString()} UZS</p>
+      <button data-id="${prod.id}">Добавить в корзину</button>
+    `;
+    productsContainer.appendChild(card);
+  });
+  productsContainer.querySelectorAll("button").forEach(btn=>{
+    btn.onclick = () => {
+      const id = +btn.dataset.id;
+      addToCart(id);
+    };
+  });
+}
 
-  function saveProducts() {
-    localStorage.setItem(lsKey, JSON.stringify(productsData));
+function renderCart(){
+  cartList.innerHTML = "";
+  if(cart.length === 0){
+    cartList.innerHTML = "<li>Корзина пуста</li>";
+    cartTotal.textContent = "Итого: 0 UZS";
+    checkoutBtn.disabled = true;
+    return;
   }
+  checkoutBtn.disabled = false;
+  let sum = 0;
+  cart.forEach(item => {
+    const prod = productsData.find(p => p.id === item.id);
+    sum += prod.price * item.qty;
+    const li = document.createElement("li");
+    li.className = "cart-item";
+    li.innerHTML = `
+      <span>${prod.name}</span>
+      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
+      <span>${(prod.price * item.qty).toLocaleString()} UZS</span>
+      <button data-id="${item.id}">&times;</button>
+    `;
+    cartList.appendChild(li);
+  });
+  cartTotal.textContent = `Итого: ${sum.toLocaleString()} UZS`;
+  
+  cartList.querySelectorAll("input").forEach(input => {
+    input.onchange = () => {
+      let id = +input.dataset.id;
+      let val = parseInt(input.value);
+      if (val < 1) val = 1;
+      updateQty(id, val);
+    };
+  });
+  cartList.querySelectorAll("button").forEach(btn => {
+    btn.onclick = () => {
+      let id = +btn.dataset.id;
+      removeFromCart(id);
+    };
+  });
+}
 
-  function saveCart() {
-    localStorage.setItem(cartKey, JSON.stringify(cart));
+function addToCart(id){
+  let found = cart.find(item => item.id === id);
+  if(found){
+    found.qty++;
+  } else {
+    cart.push({id: id, qty:1});
   }
+  renderCart();
+}
 
-  function showNotification(msg) {
-    notification.textContent = msg;
-    notification.style.display = "block";
-    setTimeout(() => (notification.style.display = "none"), 2500);
+function updateQty(id, qty){
+  let item = cart.find(i => i.id === id);
+  if(item){
+    item.qty = qty;
   }
+  renderCart();
+}
 
-  function renderProducts() {
-    if (!productsData.length) {
-      productsEl.innerHTML = "<p>Нет товаров для отображения.</p>";
-      return;
-    }
-    productsEl.innerHTML = productsData.map(prod => `
-      <div class="product-card" data-id="${prod.id}">
-        <img src="${prod.img}" alt="${prod.name}" loading="lazy"/>
-        <h3>${prod.name}</h3>
-        <p>${prod.price.toLocaleString()} UZS</p>
-        <button>Добавить в корзину</button>
-      </div>
-    `).join("");
-  }
+function removeFromCart(id){
+  cart = cart.filter(i => i.id !== id);
+  renderCart();
+}
 
-  function renderCart() {
-    const keys = Object.keys(cart);
-    if (keys.length === 0) {
-      cartListEl.innerHTML = "<li>Корзина пуста</li>";
-      cartTotalEl.textContent = "Итого: 0 UZS";
-      checkoutBtn.disabled = true;
-      cartEl.style.display = "none";
-      return;
-    }
-    cartEl.style.display = "flex";
+checkoutBtn.onclick = () => {
+  alert("Спасибо за заказ! (функционал оформления заказа пока не реализован)");
+  cart = [];
+  renderCart();
+};
 
-    let total = 0;
-    cartListEl.innerHTML = keys.map(id => {
-      const prod = productsData.find(p => p.id == id);
-      if (!prod) return "";
-      const qty = cart[id];
-      const sum = prod.price * qty;
-      total += sum;
-      return `
-        <li class="cart-item" data-id="${id}">
-          <span>${prod.name}</span>
-          <input type="number" min="1" value="${qty}" />
-          <span>${sum.toLocaleString()} UZS</span>
-          <button title="Удалить">×</button>
-        </li>
-      `;
-    }).join("");
-    cartTotalEl.textContent = `Итого: ${total.toLocaleString()} UZS`;
-    checkoutBtn.disabled = false;
-  }
-
-  function addToCart(id) {
-    if (cart[id]) cart[id]++;
-    else cart[id] = 1;
-    saveCart();
-    renderCart();
-    showNotification("Товар добавлен в корзину");
-  }
-
-  function updateCartItem(id, qty) {
-    if (qty <= 0) {
-      delete cart[id];
-    } else {
-      cart[id] = qty;
-    }
-    saveCart();
-    renderCart();
-  }
-
-  function setupEvents() {
-    productsEl.addEventListener("click", e => {
-      if (e.target.tagName === "BUTTON") {
-        const card = e.target.closest(".product-card");
-        const id = card.dataset.id;
-        addToCart(id);
-      }
-    });
-
-    cartListEl.addEventListener("click", e => {
-      if (e.target.tagName === "BUTTON") {
-        // Удалить товар
-        const li = e.target.closest(".cart-item");
-        const id = li.dataset.id;
-        delete cart[id];
-        saveCart();
-        renderCart();
-      }
-    });
-
-    cartListEl.addEventListener("change", e => {
-      if (e.target.tagName === "INPUT") {
-        const li = e.target.closest(".cart-item");
-        const id = li.dataset.id;
-        let val = parseInt(e.target.value);
-        if (isNaN(val) || val < 1) val = 1;
-        updateCartItem(id, val);
-      }
-    });
-
-    checkoutBtn.addEventListener("click", () => {
-      alert("Спасибо за заказ! Ваша корзина будет очищена.");
-      cart = {};
-      saveCart();
-      renderCart();
-    });
-
-    adminForm.addEventListener("submit", e => {
-      e.preventDefault();
-      const name = document.getElementById("prodName").value.trim();
-      const price = Number(document.getElementById("prodPrice").value);
-      const category = document.getElementById("prodCategory").value;
-      const img = document.getElementById("prodImage").value.trim();
-      if (!name || price <= 0 || !category || !img) {
-        alert("Пожалуйста, заполните все поля корректно.");
-        return;
-      }
-      const newId = productsData.length ? Math.max(...productsData.map(p => p.id)) + 1 : 1;
-      productsData.push({id: newId, name, price, category, img});
-      saveProducts();
-      renderProducts();
-      adminForm.reset();
-      showNotification("Товар добавлен");
-    });
-  }
-
-  function init() {
-    renderProducts();
-    renderCart();
-    setupEvents();
-  }
-
-  init();
-
-})();
+renderProducts();
+renderCart();
 </script>
-
 </body>
 </html>
