@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>OSON MARKET</title>
 <style>
-  /* Твои стили оставляем без изменений */
   *{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
   body{background:#f9f9f9;padding:15px;color:#222;}
   header{text-align:center;margin-bottom:20px;}
@@ -43,28 +42,6 @@
     position:fixed;top:20px;right:20px;background:#28a745;color:#fff;padding:12px 20px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.2);
     display:none; z-index:1000; font-weight:700;
   }
-  #authPanel{
-    flex-basis:100%;
-    background:#e9e9e9;
-    padding:15px;
-    border-radius:12px;
-    margin-bottom:20px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.1);
-    text-align:center;
-  }
-  #logoutBtn{
-    background:#cc0000;
-    color:#fff;
-    border:none;
-    border-radius:10px;
-    padding:10px 20px;
-    font-weight:700;
-    cursor:pointer;
-    margin-top:10px;
-  }
-  #logoutBtn:hover{
-    background:#990000;
-  }
   @media(max-width:768px){
     main{flex-direction:column;}
     #cart,#products{max-width:100%;}
@@ -77,32 +54,16 @@
 </header>
 
 <main>
-  <section id="authPanel">
-    <!-- Telegram Login Widget -->
-    <script async src="https://telegram.org/js/telegram-widget.js?15"
-      data-telegram-login="YOUR_BOT_USERNAME"
-      data-size="large"
-      data-userpic="false"
-      data-auth-url="https://yourserver.com/auth/telegram"
-      data-request-access="write">
-    </script>
+  <section id="products"></section>
 
-    <div id="userInfo" style="display:none;">
-      <p>Вы вошли как: <strong><span id="userNameDisplay"></span></strong></p>
-      <button id="logoutBtn">Выйти</button>
-    </div>
-  </section>
-
-  <section id="products" style="display:none;"></section>
-
-  <section id="cart" style="display:none;">
+  <section id="cart">
     <h2>Корзина</h2>
     <ul id="cart-list"><li>Корзина пуста</li></ul>
     <div id="cart-total">Итого: 0 UZS</div>
-    <button id="checkoutBtn">Оформить заказ</button>
+    <button id="checkoutBtn" disabled>Оформить заказ</button>
   </section>
 
-  <section id="adminPanel" style="display:none;">
+  <section id="adminPanel">
     <h2>Панель администратора</h2>
     <form id="adminForm">
       <label for="prodName">Название товара</label>
@@ -127,16 +88,16 @@
 <script>
 const lsKey = "osonMarketProducts";
 const cartKey = "osonMarketCart";
-const sessionKey = "osonMarketSession";
 
+// Изначальные товары
 let productsData = JSON.parse(localStorage.getItem(lsKey)) || [
   {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
   {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
   {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
   {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"}
 ];
+
 let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-let sessionUser = JSON.parse(localStorage.getItem(sessionKey)) || null;
 
 const productsContainer=document.getElementById("products");
 const cartList=document.getElementById("cart-list");
@@ -144,11 +105,6 @@ const cartTotal=document.getElementById("cart-total");
 const checkoutBtn=document.getElementById("checkoutBtn");
 const adminForm=document.getElementById("adminForm");
 const notification=document.getElementById("notification");
-
-const authPanel=document.getElementById("authPanel");
-const userInfo=document.getElementById("userInfo");
-const userNameDisplay=document.getElementById("userNameDisplay");
-const logoutBtn=document.getElementById("logoutBtn");
 
 function showNotification(msg){
   notification.textContent = msg;
@@ -161,9 +117,6 @@ function saveProducts(){
 }
 function saveCart(){
   localStorage.setItem(cartKey, JSON.stringify(cart));
-}
-function saveSession(){
-  localStorage.setItem(sessionKey, JSON.stringify(sessionUser));
 }
 
 function renderProducts(){
@@ -202,33 +155,84 @@ function renderCart(){
     const li = document.createElement("li");
     li.className = "cart-item";
     li.innerHTML = `
-      <span>${prod.name} — ${prod.price.toLocaleString()} UZS</span>
-      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
-      <button data-id="${item.id}">&times;</button>
+      <span>${prod.name} (${item.qty} шт.)</span>
+      <input type="number" min="1" value="${item.qty}" />
+      <button>&times;</button>
     `;
+    const input = li.querySelector("input");
+    const btnRemove = li.querySelector("button");
+
+    input.onchange = () => {
+      const val = parseInt(input.value);
+      if(val >= 1){
+        item.qty = val;
+        saveCart();
+        renderCart();
+      }
+    };
+    btnRemove.onclick = () => {
+      cart = cart.filter(c => c !== item);
+      saveCart();
+      renderCart();
+    };
+    sum += prod.price * item.qty;
     cartList.appendChild(li);
   });
-  updateCartTotal();
-  attachCartEvents();
+  cartTotal.textContent = "Итого: " + sum.toLocaleString() + " UZS";
 }
 
-function updateCartTotal(){
-  let total = 0;
-  cart.forEach(item => {
-    const prod = productsData.find(p => p.id === item.id);
-    total += prod.price * item.qty;
-  });
-  cartTotal.textContent = `Итого: ${total.toLocaleString()} UZS`;
+function addToCart(id){
+  const found = cart.find(c => c.id === id);
+  if(found){
+    found.qty++;
+  }else{
+    cart.push({id:id, qty:1});
+  }
+  saveCart();
+  renderCart();
+  showNotification("Товар добавлен в корзину");
 }
 
-function attachCartEvents(){
-  cartList.querySelectorAll("input").forEach(input => {
-    input.onchange = () => {
-      const id = +input.dataset.id;
-      const qty = +input.value;
-      if(qty < 1){
-        input.value = 1;
-        return;
-      }
-      const item = cart.find(i => i.id === id);
-      if
+checkoutBtn.onclick = () => {
+  if(cart.length === 0){
+    alert("Корзина пуста");
+    return;
+  }
+  alert("Спасибо за заказ! (Демо)");
+  cart = [];
+  saveCart();
+  renderCart();
+};
+
+adminForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("prodName").value.trim();
+  const price = parseInt(document.getElementById("prodPrice").value);
+  const category = document.getElementById("prodCategory").value;
+  const fileInput = document.getElementById("prodImage");
+
+  if(!name || !price || !category || !fileInput.files.length){
+    alert("Заполните все поля");
+    return;
+  }
+
+  // Преобразуем картинку в base64
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(event){
+    const imgData = event.target.result;
+    const newId = productsData.length ? Math.max(...productsData.map(p=>p.id)) + 1 : 1;
+    productsData.push({id:newId,name:name,price:price,category:category,img:imgData});
+    saveProducts();
+    renderProducts();
+    adminForm.reset();
+    showNotification("Товар добавлен");
+  };
+  reader.readAsDataURL(file);
+};
+
+renderProducts();
+renderCart();
+</script>
+</body>
+</html>
