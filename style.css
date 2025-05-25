@@ -1,0 +1,46 @@
+import express from 'express';
+import cors from 'cors';
+import fs from 'fs/promises';
+import path from 'path';
+
+const app = express();
+const PORT = 4000;
+const DATA_FILE = path.resolve('./server/data.json');
+
+app.use(cors());
+app.use(express.json());
+
+async function readData() {
+  try {
+    const data = await fs.readFile(DATA_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+async function writeData(data) {
+  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+app.get('/api/packages', async (req, res) => {
+  const packages = await readData();
+  res.json(packages);
+});
+
+app.post('/api/update-price', async (req, res) => {
+  const { password, id, newPrice } = req.body;
+  if (password !== 'supersecret') {
+    return res.json({ success: false, error: 'Неверный пароль' });
+  }
+  let packages = await readData();
+  const index = packages.findIndex(p => p.id === id);
+  if (index === -1) return res.json({ success: false, error: 'Пакет не найден' });
+  packages[index].price = newPrice;
+  await writeData(packages);
+  res.json({ success: true, packages });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server started at http://localhost:${PORT}`);
+});
