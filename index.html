@@ -3,149 +3,150 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OSON MARKET</title>
-<link rel="stylesheet" href="style.css" />
+<title>Игра: Поймай шарик</title>
+<style>
+  body {
+    margin: 0; 
+    background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+  }
+  h1 {
+    margin: 15px 0;
+    user-select: none;
+  }
+  #gameArea {
+    position: relative;
+    background: #222;
+    border-radius: 20px;
+    width: 320px;
+    height: 480px;
+    box-shadow: 0 0 30px rgba(255,255,255,0.3);
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+  #ball {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle at 30% 30%, #ff5252, #b30000);
+    border-radius: 50%;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 0 15px #ff4d4d;
+    transition: box-shadow 0.2s;
+  }
+  #ball:active {
+    box-shadow: 0 0 30px #ff0000;
+  }
+  #score {
+    margin-top: 15px;
+    font-size: 24px;
+    user-select: none;
+  }
+  #startBtn {
+    margin-top: 15px;
+    padding: 10px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 12px;
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 4px 12px rgba(76,175,80,0.6);
+    transition: background 0.3s;
+  }
+  #startBtn:hover {
+    background: #388e3c;
+  }
+  #timer {
+    margin-top: 10px;
+    font-size: 20px;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-<header>
-  <h1>OSON MARKET</h1>
-</header>
 
-<main>
-  <section id="products"></section>
-
-  <section id="cart">
-    <h2>Корзина</h2>
-    <ul id="cart-list"><li>Корзина пуста</li></ul>
-    <div id="cart-total">Итого: 0 UZS</div>
-    <button id="checkoutBtn" disabled>Оформить заказ</button>
-  </section>
-</main>
+<h1>Поймай шарик!</h1>
+<div id="gameArea">
+  <div id="ball"></div>
+</div>
+<div id="score">Очки: 0</div>
+<div id="timer">Время: 30</div>
+<button id="startBtn">Начать игру</button>
 
 <script>
-const productsData = [
-  {id:1,name:"Спортивная футболка",price:99000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка"},
-  {id:2,name:"Шорты тренировочные",price:79000,category:"sport",img:"https://via.placeholder.com/300?text=Шорты"},
-  {id:3,name:"Рюкзак городской",price:159000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак"},
-  {id:4,name:"Бутылка для воды",price:49000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка"},
-  {id:5,name:"Кроссовки беговые",price:230000,category:"sport",img:"https://via.placeholder.com/300?text=Кроссовки"},
-  {id:6,name:"Фитнес браслет",price:180000,category:"electronics",img:"https://via.placeholder.com/300?text=Браслет"},
-  {id:7,name:"Спортивная бутылка",price:35000,category:"accessory",img:"https://via.placeholder.com/300?text=Бутылка+спорт"},
-  {id:8,name:"Йога мат",price:110000,category:"sport",img:"https://via.placeholder.com/300?text=Йога+мат"},
-  {id:9,name:"Наушники Bluetooth",price:130000,category:"electronics",img:"https://via.placeholder.com/300?text=Наушники"},
-  {id:10,name:"Ремень для йоги",price:25000,category:"sport",img:"https://via.placeholder.com/300?text=Ремень+йога"},
-  {id:11,name:"Спортивная куртка",price:150000,category:"sport",img:"https://via.placeholder.com/300?text=Куртка"},
-  {id:12,name:"Очки для плавания",price:45000,category:"sport",img:"https://via.placeholder.com/300?text=Очки"},
-  {id:13,name:"Рюкзак туристический",price:220000,category:"accessory",img:"https://via.placeholder.com/300?text=Туристический+рюкзак"},
-  {id:14,name:"Спортивные перчатки",price:35000,category:"sport",img:"https://via.placeholder.com/300?text=Перчатки"},
-  {id:15,name:"Часы спортивные",price:300000,category:"electronics",img:"https://via.placeholder.com/300?text=Часы"},
-  {id:16,name:"Футболка с логотипом",price:90000,category:"sport",img:"https://via.placeholder.com/300?text=Футболка+логотип"},
-  {id:17,name:"Спортивные штаны",price:120000,category:"sport",img:"https://via.placeholder.com/300?text=Штаны"},
-  {id:18,name:"Массажный ролик",price:70000,category:"sport",img:"https://via.placeholder.com/300?text=Массажный+ролик"},
-  {id:19,name:"Спортивный рюкзак",price:125000,category:"accessory",img:"https://via.placeholder.com/300?text=Рюкзак+спорт"},
-  {id:20,name:"Кепка спортивная",price:45000,category:"accessory",img:"https://via.placeholder.com/300?text=Кепка"}
-];
+  const gameArea = document.getElementById('gameArea');
+  const ball = document.getElementById('ball');
+  const scoreDisplay = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const startBtn = document.getElementById('startBtn');
 
-let cart = [];
+  let score = 0;
+  let gameInterval = null;
+  let countdownInterval = null;
+  let timeLeft = 30; // сек
 
-const productsContainer = document.getElementById("products");
-const cartList = document.getElementById("cart-list");
-const cartTotal = document.getElementById("cart-total");
-const checkoutBtn = document.getElementById("checkoutBtn");
-
-function renderProducts(){
-  productsContainer.innerHTML = "";
-  productsData.forEach(prod => {
-    const card = document.createElement("div");
-    card.className = "product-card";
-    card.innerHTML = `
-      <img src="${prod.img}" alt="${prod.name}" />
-      <h3>${prod.name}</h3>
-      <p>${prod.price.toLocaleString()} UZS</p>
-      <button data-id="${prod.id}">Добавить в корзину</button>
-    `;
-    productsContainer.appendChild(card);
-  });
-  productsContainer.querySelectorAll("button").forEach(btn=>{
-    btn.onclick = () => {
-      const id = +btn.dataset.id;
-      addToCart(id);
-    };
-  });
-}
-
-function renderCart(){
-  cartList.innerHTML = "";
-  if(cart.length === 0){
-    cartList.innerHTML = "<li>Корзина пуста</li>";
-    cartTotal.textContent = "Итого: 0 UZS";
-    checkoutBtn.disabled = true;
-    return;
+  function randomPosition() {
+    const maxX = gameArea.clientWidth - ball.offsetWidth;
+    const maxY = gameArea.clientHeight - ball.offsetHeight;
+    const x = Math.floor(Math.random() * maxX);
+    const y = Math.floor(Math.random() * maxY);
+    return {x, y};
   }
-  checkoutBtn.disabled = false;
-  let sum = 0;
-  cart.forEach(item => {
-    const prod = productsData.find(p => p.id === item.id);
-    sum += prod.price * item.qty;
-    const li = document.createElement("li");
-    li.className = "cart-item";
-    li.innerHTML = `
-      <span>${prod.name}</span>
-      <input type="number" min="1" value="${item.qty}" data-id="${item.id}" />
-      <span>${(prod.price * item.qty).toLocaleString()} UZS</span>
-      <button data-id="${item.id}">&times;</button>
-    `;
-    cartList.appendChild(li);
-  });
-  cartTotal.textContent = `Итого: ${sum.toLocaleString()} UZS`;
-  
-  cartList.querySelectorAll("input").forEach(input => {
-    input.onchange = () => {
-      let id = +input.dataset.id;
-      let val = parseInt(input.value);
-      if (val < 1) val = 1;
-      updateQty(id, val);
-    };
-  });
-  cartList.querySelectorAll("button").forEach(btn => {
-    btn.onclick = () => {
-      let id = +btn.dataset.id;
-      removeFromCart(id);
-    };
-  });
-}
 
-function addToCart(id){
-  let found = cart.find(item => item.id === id);
-  if(found){
-    found.qty++;
-  } else {
-    cart.push({id: id, qty:1});
+  function moveBall() {
+    const pos = randomPosition();
+    ball.style.left = pos.x + 'px';
+    ball.style.top = pos.y + 'px';
   }
-  renderCart();
-}
 
-function updateQty(id, qty){
-  let item = cart.find(i => i.id === id);
-  if(item){
-    item.qty = qty;
+  function startGame() {
+    score = 0;
+    timeLeft = 30;
+    scoreDisplay.textContent = `Очки: ${score}`;
+    timerDisplay.textContent = `Время: ${timeLeft}`;
+    startBtn.disabled = true;
+    ball.style.display = 'block';
+    moveBall();
+
+    gameInterval = setInterval(moveBall, 1000); // шарик меняет позицию каждую секунду
+
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      timerDisplay.textContent = `Время: ${timeLeft}`;
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
   }
-  renderCart();
-}
 
-function removeFromCart(id){
-  cart = cart.filter(i => i.id !== id);
-  renderCart();
-}
+  function endGame() {
+    clearInterval(gameInterval);
+    clearInterval(countdownInterval);
+    ball.style.display = 'none';
+    alert(`Игра окончена! Ваш счет: ${score}`);
+    startBtn.disabled = false;
+  }
 
-checkoutBtn.onclick = () => {
-  alert("Спасибо за заказ! (функционал оформления заказа пока не реализован)");
-  cart = [];
-  renderCart();
-};
+  ball.addEventListener('click', () => {
+    score++;
+    scoreDisplay.textContent = `Очки: ${score}`;
+    moveBall(); // сразу прыгаем шарик при клике
+  });
 
-renderProducts();
-renderCart();
+  startBtn.addEventListener('click', startGame);
+
+  // Изначально скрываем шарик
+  ball.style.display = 'none';
 </script>
+
 </body>
 </html>
