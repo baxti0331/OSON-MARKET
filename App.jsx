@@ -1,56 +1,50 @@
-import React, { useEffect, useState } from "react";
-import ReactDOM from "react-dom";
+import React from "react";
 
-const API_URL = "http://localhost:4000/api/packages";
+const packages = [
+  { id: 1, name: "100 UC", price: 1.99 },
+  { id: 2, name: "300 UC", price: 4.99 },
+  { id: 3, name: "600 UC", price: 8.99 },
+  { id: 4, name: "1200 UC", price: 16.99 },
+  { id: 5, name: "2500 UC", price: 34.99 },
+];
 
-function App() {
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => {
-        setPackages(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <h2>Загрузка пакетов UC...</h2>;
-
+export default function App() {
   return (
-    <div>
-      <h1>PUBG Mobile UC Store</h1>
-      <ul style={{ padding: 0, listStyle: "none" }}>
-        {packages.map(p => (
-          <li key={p.id} style={{
-            background: "#1c2541",
-            marginBottom: "10px",
-            padding: "15px",
-            borderRadius: "10px",
-            boxShadow: "0 0 8px #d90429"
+    <div style={{
+      maxWidth: 600,
+      margin: "20px auto",
+      padding: 20,
+      backgroundColor: "#0b132b",
+      color: "white",
+      fontFamily: "'Arial', sans-serif",
+      borderRadius: 10
+    }}>
+      <h1 style={{ textAlign: "center" }}>PUBG Mobile UC Store</h1>
+      {packages.map(pkg => (
+        <div key={pkg.id} style={{
+          backgroundColor: "#1c2541",
+          padding: 15,
+          margin: "10px 0",
+          borderRadius: 8,
+          boxShadow: "0 0 8px #d90429"
+        }}>
+          <strong style={{ fontSize: 18 }}>{pkg.name}</strong>
+          <div style={{ marginTop: 8, fontSize: 16 }}>
+            Цена: <span style={{ color: "#d90429" }}>${pkg.price.toFixed(2)}</span>
+          </div>
+          <button style={{
+            marginTop: 12,
+            backgroundColor: "#d90429",
+            border: "none",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: 6,
+            cursor: "pointer"
           }}>
-            <strong style={{ fontSize: "1.2rem" }}>{p.name}</strong>
-            <div style={{ fontSize: "1rem", marginTop: "5px" }}>
-              Цена: <span style={{ color: "#d90429" }}>${p.price.toFixed(2)}</span>
-            </div>
-            <button style={{
-              marginTop: "10px",
-              background: "#d90429",
-              border: "none",
-              color: "#fff",
-              padding: "10px 20px",
-              borderRadius: "6px",
-              cursor: "pointer"
-            }}>
-              Купить
-            </button>
-          </li>
-        ))}
-      </ul>
+            Купить
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
-
-ReactDOM.render(<App />, document.getElementById("root"));
