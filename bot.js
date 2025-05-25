@@ -1,56 +1,75 @@
-const { Telegraf, Markup, session } = require('telegraf');
+const { Telegraf, Markup } = require('telegraf');
+const { Pool } = require('pg');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
-bot.use(session());
+const db = new Pool({ connectionString: process.env.DATABASE_URL });
 
-bot.start((ctx) => {
-  ctx.session.state = 'main';
-  ctx.session.coins = ctx.session.coins || 0;
-  return showMainMenu(ctx);
+// Инициализация пользователя
+async function initUser(id) {
+  await db.query(`
+    INSERT INTO users (id, balance, autoclick)
+    VALUES ($1, 0, 0)
+    ON CONFLICT (id) DO NOTHING
+  `, [id]);
+}
+
+// Команда /start
+bot.start(async (ctx) => {
+  const id = ctx.from.id;
+  await initUser(id);
+  await ctx.reply('🏠 Главное меню:', mainMenu());
 });
 
+// Обработка inline-кнопок
 bot.on('callback_query', async (ctx) => {
   const action = ctx.callbackQuery.data;
-  ctx.answerCbQuery();
+  const id = ctx.from.id;
 
-  switch (action) {
-    case 'earn':
-      ctx.session.coins = (ctx.session.coins || 0) + 1;
-      return ctx.editMessageText(`Вы заработали 1 монету! 💰 Всего: ${ctx.session.coins}`, mainMenu());
+  await initUser(id);
+  await ctx.answerCbQuery();
 
-    case 'shop':
-      ctx.session.state = 'shop';
-      return ctx.editMessageText('🛍 Магазин:
+  if (action === 'earn') {
+    await db.query("UPDATE users SET balance = balance + 1 WHERE id = $1", [id]);
+    const { rows } = await db.query("SELECT balance FROM users WHERE id = $1", [id]);
+    return ctx.editMessageText(`Вы заработали 1 монету! 💰 Всего: ${rows[0].balance}`, mainMenu());
+  }
 
-1. Апгрейд клика — 10 монет
-2. Автоклик — 50 монет', shopMenu());
+  if (action === 'shop') {
+    return ctx.editMessageText('🛍 Магазин:\n\n1. Купить автокликер — 50 монет', shopMenu());
+  }
 
-    case 'upgrades':
-      ctx.session.state = 'upgrades';
-      return ctx.editMessageText('📈 Улучшения:
+  if (action === 'buy_autoclick') {
+    const { rows } = await db.query("SELECT balance, autoclick FROM users WHERE id = $1", [id]);
+    const user = rows[0];
+    if (user.balance >= 50 && user.autoclick === 0) {
+      await db.query("UPDATE users SET balance = balance - 50, autoclick = 1 WHERE id = $1", [id]);
+      return ctx.editMessageText("✅ Автокликер куплен!", shopMenu());
+    } else {
+      return ctx.editMessageText("❌ Недостаточно монет или уже куплено.", shopMenu());
+    }
+  }
 
-- Пока нет улучшений.', upgradesMenu());
+  if (action === 'upgrades') {
+    return ctx.editMessageText('📈 Улучшения:\n\n- Автокликер работает каждую минуту.', upgradesMenu());
+  }
 
-    case 'profile':
-      const coins = ctx.session.coins || 0;
-      return ctx.editMessageText(`👤 Профиль:
+  if (action === 'profile') {
+    const { rows } = await db.query("SELECT balance, autoclick FROM users WHERE id = $1", [id]);
+    const user = rows[0];
+    return ctx.editMessageText(`👤 Профиль:\n\n💰 Монет: ${user.balance}\n⚙ Автокликер: ${user.autoclick ? 'Вкл' : 'Выкл'}`, profileMenu());
+  }
 
-💰 Монет: ${coins}
-🆔 ID: ${ctx.from.id}`, profileMenu());
-
-    case 'back':
-      ctx.session.state = 'main';
-      return showMainMenu(ctx);
-
-    default:
-      return ctx.reply('Неизвестная команда.');
+  if (action === 'back') {
+    return ctx.editMessageText('🏠 Главное меню:', mainMenu());
   }
 });
 
-function showMainMenu(ctx) {
-  return ctx.reply('🏠 Главное меню:', mainMenu());
-}
+// Автокликер
+setInterval(async () => {
+  await db.query("UPDATE users SET balance = balance + 1 WHERE autoclick = 1");
+}, 60000);
 
+// Меню
 function mainMenu() {
   return Markup.inlineKeyboard([
     [Markup.button.callback('💰 Заработать', 'earn')],
@@ -61,16 +80,23 @@ function mainMenu() {
 }
 
 function shopMenu() {
-  return Markup.inlineKeyboard([[Markup.button.callback('⬅ Назад', 'back')]]);
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('🛒 Купить автокликер (50)', 'buy_autoclick')],
+    [Markup.button.callback('⬅ Назад', 'back')]
+  ]);
 }
 
 function upgradesMenu() {
-  return Markup.inlineKeyboard([[Markup.button.callback('⬅ Назад', 'back')]]);
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('⬅ Назад', 'back')]
+  ]);
 }
 
 function profileMenu() {
-  return Markup.inlineKeyboard([[Markup.button.callback('⬅ Назад', 'back')]]);
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('⬅ Назад', 'back')]
+  ]);
 }
 
 bot.launch();
-console.log('🤖 Бот с inline-кнопками запущен!');
+console.log('🤖 Бот с PostgreSQL запущен!');
