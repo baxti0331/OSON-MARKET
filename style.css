@@ -4,40 +4,28 @@
   padding: 0;
   font-family: sans-serif;
 }
-
 body {
   background: #f9f9f9;
   padding: 15px;
   color: #222;
 }
-
 header {
   text-align: center;
   margin-bottom: 20px;
 }
-
 main {
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
-  flex-wrap: wrap;
   gap: 20px;
 }
-
-section {
-  background: #fff;
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
-
 #products {
-  flex: 3 1 600px;
+  flex: 3 1 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 15px;
+  min-width: 0;
 }
-
 .product-card {
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -46,11 +34,9 @@ section {
   flex-direction: column;
   transition: box-shadow 0.3s;
 }
-
 .product-card:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
-
 .product-card img {
   width: 100%;
   border-radius: 10px;
@@ -58,20 +44,17 @@ section {
   object-fit: cover;
   margin-bottom: 12px;
 }
-
 .product-card h3 {
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 1.1rem;
   flex-grow: 1;
 }
-
 .product-card p {
   color: #0078d7;
   font-weight: 700;
   margin-bottom: 12px;
 }
-
 .product-card button {
   background: #0078d7;
   color: #fff;
@@ -82,34 +65,28 @@ section {
   cursor: pointer;
   transition: background 0.3s;
 }
-
 .product-card button:hover {
   background: #005fa3;
 }
-
-/* Липкая корзина */
 #cart {
+  flex: 1 1 300px;
   position: sticky;
   top: 15px;
-  flex: 1 1 280px;
-  display: flex;
-  flex-direction: column;
   max-height: calc(100vh - 30px);
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
-
 #cart h2 {
   margin-bottom: 10px;
   font-weight: 700;
 }
-
 #cart-list {
   flex-grow: 1;
   overflow-y: auto;
   list-style: none;
   padding-right: 5px;
 }
-
 .cart-item {
   display: flex;
   align-items: center;
@@ -117,12 +94,10 @@ section {
   padding: 8px 0;
   border-bottom: 1px solid #eee;
 }
-
 .cart-item span {
   flex-grow: 1;
   overflow-wrap: anywhere;
 }
-
 .cart-item input {
   width: 50px;
   margin: 0 10px;
@@ -131,7 +106,6 @@ section {
   border: 1px solid #ccc;
   text-align: center;
 }
-
 .cart-item button {
   background: none;
   border: none;
@@ -141,7 +115,6 @@ section {
   user-select: none;
   padding: 0 5px;
 }
-
 #cart-total {
   font-weight: 700;
   font-size: 1.2rem;
@@ -149,7 +122,6 @@ section {
   margin: 10px 0;
   color: #0078d7;
 }
-
 #checkoutBtn {
   background: #28a745;
   color: #fff;
@@ -160,17 +132,6 @@ section {
   cursor: pointer;
   transition: background 0.3s;
 }
-
 #checkoutBtn:hover {
   background: #1e7e34;
-}
-
-@media (max-width: 768px) {
-  main {
-    flex-direction: column;
-  }
-  #cart,
-  #products {
-    max-width: 100%;
-  }
 }
