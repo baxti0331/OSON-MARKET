@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Медитативный Таймер</title>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    font-family: 'Arial', sans-serif;
+    color: white;
+  }
+  #timer {
+    font-size: 6rem;
+    font-weight: bold;
+    text-align: center;
+    animation: pulse 2s infinite ease-in-out;
+    margin-bottom: 20px;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: rgba(255,255,255,0.2);
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: rgba(255,255,255,0.4);
+  }
+  input[type="number"] {
+    width: 80px;
+    font-size: 1.2rem;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    text-align: center;
+  }
+  label {
+    margin-bottom: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div id="timer">15:00</div>
+
+<div class="controls">
+  <button id="startBtn">Старт</button>
+  <button id="pauseBtn" disabled>Пауза</button>
+  <button id="resetBtn" disabled>Сброс</button>
+</div>
+
+<div>
+  <label for="durationInput">Длительность (минуты):</label><br/>
+  <input type="number" id="durationInput" min="1" max="120" value="15" />
+</div>
+
+<script>
+  const timerDisplay = document.getElementById('timer');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const durationInput = document.getElementById('durationInput');
+
+  let timer;
+  let countdown;
+  let isRunning = false;
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+  }
+
+  function startTimer(duration) {
+    timer = duration;
+    timerDisplay.textContent = formatTime(timer);
+
+    countdown = setInterval(() => {
+      timer--;
+      timerDisplay.textContent = formatTime(timer);
+
+      if (timer <= 0) {
+        clearInterval(countdown);
+        isRunning = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = false;
+        startBtn.disabled = false;
+        new Audio('calm_bell.mp3').play();
+      }
+    }, 1000);
+  }
+
+  startBtn.addEventListener('click', () => {
+    if (isRunning) return;
+    const duration = parseInt(durationInput.value, 10) * 60;
+    if (isNaN(duration) || duration <= 0) return alert('Введите корректное время');
+
+    startTimer(duration);
+    isRunning = true;
+    startBtn.disabled = true;
+    pauseBtn.disabled = false;
+    resetBtn.disabled = false;
+    durationInput.disabled = true;
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (!isRunning) return;
+    clearInterval(countdown);
+    isRunning = false;
+    pauseBtn.disabled = true;
+    startBtn.disabled = false;
+  });
+
+  resetBtn.addEventListener('click', () => {
+    clearInterval(countdown);
+    isRunning = false;
+    const duration = parseInt(durationInput.value, 10) * 60;
+    timerDisplay.textContent = formatTime(duration);
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    resetBtn.disabled = true;
+    durationInput.disabled = false;
+  });
+
+  // Инициализация начального таймера
+  timerDisplay.textContent = formatTime(parseInt(durationInput.value, 10) * 60);
+</script>
+
+</body>
+</html>
