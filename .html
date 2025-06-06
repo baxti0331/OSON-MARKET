@@ -1,147 +1,410 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>Медитативный Таймер</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relax Time — Расслабляющее приложение с медитацией</title>
 <style>
-  body {
+  @import url('https://fonts.googleapis.com/css2?family=Comfortaa&display=swap');
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+    font-family: 'Comfortaa', cursive, sans-serif;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    font-family: 'Arial', sans-serif;
-    color: white;
+    justify-content: flex-start;
+    color: #fff;
+    user-select: none;
+    overflow-x: hidden;
   }
-  #timer {
-    font-size: 6rem;
-    font-weight: bold;
+  header {
+    margin: 30px 0 15px;
     text-align: center;
-    animation: pulse 2s infinite ease-in-out;
-    margin-bottom: 20px;
   }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+  h1 {
+    font-weight: 700;
+    font-size: 3rem;
+    margin: 0;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
-  .controls {
+  nav {
     display: flex;
-    gap: 10px;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  nav button {
+    background: rgba(255 255 255 / 0.3);
+    border: none;
+    padding: 10px 25px;
+    font-size: 1.2rem;
+    border-radius: 30px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  nav button.active,
+  nav button:hover {
+    background: rgba(255 255 255 / 0.6);
+    color: #003366;
+  }
+
+  section {
+    max-width: 400px;
+    width: 100%;
+    padding: 20px 30px;
+    background: rgba(255 255 255 / 0.15);
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    text-align: center;
+  }
+  section:not(.active) {
+    display: none;
+  }
+  .clock {
+    font-size: 5rem;
+    letter-spacing: 8px;
+    font-weight: 900;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    margin-bottom: 40px;
+  }
+  .timer-display {
+    font-size: 4rem;
+    font-weight: 700;
     margin-bottom: 20px;
+    letter-spacing: 5px;
+  }
+  .buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
   }
   button {
-    padding: 10px 20px;
-    font-size: 1.2rem;
+    background: rgba(255 255 255 / 0.3);
     border: none;
-    border-radius: 6px;
+    padding: 12px 25px;
+    font-size: 1.2rem;
+    border-radius: 50px;
+    color: #fff;
     cursor: pointer;
-    background-color: rgba(255,255,255,0.2);
-    color: white;
-    transition: background-color 0.3s ease;
+    transition: background 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
   }
-  button:hover {
-    background-color: rgba(255,255,255,0.4);
+  button:hover:not(:disabled) {
+    background: rgba(255 255 255 / 0.6);
+  }
+  button:disabled {
+    background: rgba(255 255 255 / 0.1);
+    cursor: not-allowed;
   }
   input[type="number"] {
-    width: 80px;
-    font-size: 1.2rem;
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
+    width: 70px;
+    font-size: 1.5rem;
     text-align: center;
+    border-radius: 10px;
+    border: none;
+    padding: 5px 10px;
+    margin-bottom: 20px;
+    font-weight: 700;
   }
   label {
-    margin-bottom: 5px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: block;
+  }
+  /* Фон с анимацией волн */
+  .waves {
+    position: fixed;
+    bottom: 0;
+    width: 200%;
+    height: 20%;
+    background: url('https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg') repeat-x;
+    background-size: 50% 100%;
+    animation: waveAnimation 15s linear infinite;
+    opacity: 0.3;
+    z-index: -1;
+  }
+  @keyframes waveAnimation {
+    0% {
+      background-position-x: 0;
+    }
+    100% {
+      background-position-x: 1000px;
+    }
+  }
+
+  /* Медитация */
+  .meditation-text {
+    font-size: 1.3rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  /* Скрытый элемент для доступа */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    border: 0;
   }
 </style>
 </head>
 <body>
 
-<div id="timer">15:00</div>
+<header>
+  <h1>Relax Time</h1>
+  <nav role="tablist" aria-label="Переключение вкладок">
+    <button role="tab" aria-selected="true" aria-controls="clockTab" id="tabClock" tabindex="0" class="active">Часы</button>
+    <button role="tab" aria-selected="false" aria-controls="timerTab" id="tabTimer" tabindex="-1">Таймер</button>
+    <button role="tab" aria-selected="false" aria-controls="meditationTab" id="tabMeditation" tabindex="-1">Медитация</button>
+  </nav>
+</header>
 
-<div class="controls">
-  <button id="startBtn">Старт</button>
-  <button id="pauseBtn" disabled>Пауза</button>
-  <button id="resetBtn" disabled>Сброс</button>
-</div>
+<section id="clockTab" role="tabpanel" aria-labelledby="tabClock" class="active">
+  <div class="clock" aria-live="polite" aria-atomic="true" role="timer">00:00:00</div>
+</section>
 
-<div>
-  <label for="durationInput">Длительность (минуты):</label><br/>
-  <input type="number" id="durationInput" min="1" max="120" value="15" />
-</div>
+<section id="timerTab" role="tabpanel" aria-labelledby="tabTimer" >
+  <label for="minutesInput">Минуты:</label>
+  <input id="minutesInput" type="number" min="1" max="120" value="10" aria-describedby="minutesDesc" />
+  <span id="minutesDesc" class="sr-only">Введите количество минут от 1 до 120</span>
+
+  <div class="timer-display" aria-live="polite" aria-atomic="true" role="timer">00:00</div>
+
+  <div class="buttons">
+    <button id="startBtn" aria-label="Запустить таймер">Старт</button>
+    <button id="pauseBtn" aria-label="Пауза таймера" disabled>Пауза</button>
+    <button id="resetBtn" aria-label="Сброс таймера" disabled>Сброс</button>
+  </div>
+</section>
+
+<section id="meditationTab" role="tabpanel" aria-labelledby="tabMeditation">
+  <div class="meditation-text" aria-live="polite" aria-atomic="true">
+    <p>Практика дыхания по методу 4-7-8:</p>
+    <p><strong>Вдохни</strong> на 4 секунды</p>
+    <p><strong>Задержи дыхание</strong> на 7 секунд</p>
+    <p><strong>Выдохни</strong> на 8 секунд</p>
+    <p>Повтори цикл, пока работает таймер медитации.</p>
+  </div>
+
+  <label for="meditationMinutes">Время медитации (минуты):</label>
+  <input id="meditationMinutes" type="number" min="1" max="60" value="5" aria-describedby="meditationDesc" />
+  <span id="meditationDesc" class="sr-only">Введите количество минут от 1 до 60</span>
+
+  <div class="timer-display" id="meditationTimer" aria-live="polite" aria-atomic="true" role="timer">05:00</div>
+
+  <div class="buttons">
+    <button id="medStartBtn" aria-label="Запустить медитацию">Старт</button>
+    <button id="medPauseBtn" aria-label="Пауза медитации" disabled>Пауза</button>
+    <button id="medResetBtn" aria-label="Сброс медитации" disabled>Сброс</button>
+  </div>
+</section>
+
+<div class="waves" aria-hidden="true"></div>
+
+<audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+<audio id="meditationSound" src="https://actions.google.com/sounds/v1/ambiences/birds_and_water.ogg" preload="auto"></audio>
 
 <script>
-  const timerDisplay = document.getElementById('timer');
+  // Навигация вкладок
+  const tabs = document.querySelectorAll('nav button[role="tab"]');
+  const panels = document.querySelectorAll('section[role="tabpanel"]');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Снимаем выделение у всех
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+        t.setAttribute('tabindex', '-1');
+      });
+      // Скрываем все панели
+      panels.forEach(p => p.classList.remove('active'));
+
+      // Активируем текущий таб и панель
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      tab.setAttribute('tabindex', '0');
+      const panelId = tab.getAttribute('aria-controls');
+      document.getElementById(panelId).classList.add('active');
+    });
+  });
+
+  // Часы
+  const clockEl = document.querySelector('.clock');
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2,'0');
+    const m = now.getMinutes().toString().padStart(2,'0');
+    const s = now.getSeconds().toString().padStart(2,'0');
+    clockEl.textContent = `${h}:${m}:${s}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Таймер
+  const timerDisplay = document.querySelector('#timerTab .timer-display');
+  const minutesInput = document.getElementById('minutesInput');
   const startBtn = document.getElementById('startBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const resetBtn = document.getElementById('resetBtn');
-  const durationInput = document.getElementById('durationInput');
+  const alarmSound = document.getElementById('alarmSound');
 
-  let timer;
-  let countdown;
-  let isRunning = false;
+  let timerInterval = null;
+  let remainingSeconds = 0;
 
-  function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+  function displayTimer(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2,'0');
+    const s = (sec % 60).toString().padStart(2,'0');
+    timerDisplay.textContent = `${m}:${s}`;
   }
 
-  function startTimer(duration) {
-    timer = duration;
-    timerDisplay.textContent = formatTime(timer);
+  function startTimer() {
+    if (timerInterval) return;
+    if (remainingSeconds <= 0) {
+      const mins = parseInt(minutesInput.value);
+      if (isNaN(mins) || mins < 1 || mins > 120) {
+        alert('Введите корректное количество минут от 1 до 120');
+        return;
+      }
+      remainingSeconds = mins * 60;
+      displayTimer(remainingSeconds);
+    }
+    startBtn.disabled = true;
+    pauseBtn.disabled = false;
+    resetBtn.disabled = false;
+    minutesInput.disabled = true;
 
-    countdown = setInterval(() => {
-      timer--;
-      timerDisplay.textContent = formatTime(timer);
-
-      if (timer <= 0) {
-        clearInterval(countdown);
-        isRunning = false;
-        pauseBtn.disabled = true;
-        resetBtn.disabled = false;
+    timerInterval = setInterval(() => {
+      if (remainingSeconds > 0) {
+        remainingSeconds--;
+        displayTimer(remainingSeconds);
+      } else {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        alarmSound.play();
+        alert('Время вышло! Расслабься :)');
         startBtn.disabled = false;
-        new Audio('calm_bell.mp3').play();
+        pauseBtn.disabled = true;
+        resetBtn.disabled = true;
+        minutesInput.disabled = false;
+        remainingSeconds = 0;
+        displayTimer(0);
       }
     }, 1000);
   }
 
-  startBtn.addEventListener('click', () => {
-    if (isRunning) return;
-    const duration = parseInt(durationInput.value, 10) * 60;
-    if (isNaN(duration) || duration <= 0) return alert('Введите корректное время');
-
-    startTimer(duration);
-    isRunning = true;
-    startBtn.disabled = true;
-    pauseBtn.disabled = false;
-    resetBtn.disabled = false;
-    durationInput.disabled = true;
-  });
-
-  pauseBtn.addEventListener('click', () => {
-    if (!isRunning) return;
-    clearInterval(countdown);
-    isRunning = false;
-    pauseBtn.disabled = true;
+  function pauseTimer() {
+    if (!timerInterval) return;
+    clearInterval(timerInterval);
+    timerInterval = null;
     startBtn.disabled = false;
-  });
+    pauseBtn.disabled = true;
+  }
 
-  resetBtn.addEventListener('click', () => {
-    clearInterval(countdown);
-    isRunning = false;
-    const duration = parseInt(durationInput.value, 10) * 60;
-    timerDisplay.textContent = formatTime(duration);
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    remainingSeconds = 0;
+    displayTimer(0);
     startBtn.disabled = false;
     pauseBtn.disabled = true;
     resetBtn.disabled = true;
-    durationInput.disabled = false;
-  });
+    minutesInput.disabled = false;
+  }
 
-  // Инициализация начального таймера
-  timerDisplay.textContent = formatTime(parseInt(durationInput.value, 10) * 60);
+  startBtn.addEventListener('click', startTimer);
+  pauseBtn.addEventListener('click', pauseTimer);
+  resetBtn.addEventListener('click', resetTimer);
+
+  // Медитация
+  const medTimerDisplay = document.getElementById('meditationTimer');
+  const medMinutesInput = document.getElementById('meditationMinutes');
+  const medStartBtn = document.getElementById('medStartBtn');
+  const medPauseBtn = document.getElementById('medPauseBtn');
+  const medResetBtn = document.getElementById('medResetBtn');
+  const medSound = document.getElementById('meditationSound');
+
+  let medInterval = null;
+  let medRemainingSeconds = parseInt(medMinutesInput.value) * 60 || 300;
+
+  function displayMedTimer(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2,'0');
+    const s = (sec % 60).toString().padStart(2,'0');
+    medTimerDisplay.textContent = `${m}:${s}`;
+  }
+
+  function startMedTimer() {
+    if (medInterval) return;
+    if (medRemainingSeconds <= 0) {
+      const mins = parseInt(medMinutesInput.value);
+      if (isNaN(mins) || mins < 1 || mins > 60) {
+        alert('Введите корректное количество минут от 1 до 60');
+        return;
+      }
+      medRemainingSeconds = mins * 60;
+      displayMedTimer(medRemainingSeconds);
+    }
+    medStartBtn.disabled = true;
+    medPauseBtn.disabled = false;
+    medResetBtn.disabled = false;
+    medMinutesInput.disabled = true;
+
+    medInterval = setInterval(() => {
+      if (medRemainingSeconds > 0) {
+        medRemainingSeconds--;
+        displayMedTimer(medRemainingSeconds);
+      } else {
+        clearInterval(medInterval);
+        medInterval = null;
+        medSound.play();
+        alert('Медитация завершена! Отличная работа :)');
+        medStartBtn.disabled = false;
+        medPauseBtn.disabled = true;
+        medResetBtn.disabled = true;
+        medMinutesInput.disabled = false;
+        medRemainingSeconds = 0;
+        displayMedTimer(0);
+      }
+    }, 1000);
+  }
+
+  function pauseMedTimer() {
+    if (!medInterval) return;
+    clearInterval(medInterval);
+    medInterval = null;
+    medStartBtn.disabled = false;
+    medPauseBtn.disabled = true;
+  }
+
+  function resetMedTimer() {
+    clearInterval(medInterval);
+    medInterval = null;
+    medRemainingSeconds = 0;
+    displayMedTimer(0);
+    medStartBtn.disabled = false;
+    medPauseBtn.disabled = true;
+    medResetBtn.disabled = true;
+    medMinutesInput.disabled = false;
+  }
+
+  medStartBtn.addEventListener('click', startMedTimer);
+  medPauseBtn.addEventListener('click', pauseMedTimer);
+  medResetBtn.addEventListener('click', resetMedTimer);
+
+  // Инициализация медитативного таймера отображения
+  displayMedTimer(medRemainingSeconds);
+
 </script>
 
 </body>
