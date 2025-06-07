@@ -1,12 +1,22 @@
 const API_URL = "/api/products";
+const tg = window.Telegram.WebApp;
+const user = tg.initDataUnsafe?.user;
+
+if (!user) {
+  alert("Ошибка авторизации! Пожалуйста, откройте приложение через Telegram.");
+  tg.close();
+}
+
 const cart = {};
 
 function saveCart() {
-  localStorage.setItem("oson_cart", JSON.stringify(cart));
+  if (!user) return;
+  localStorage.setItem(`oson_cart_${user.id}`, JSON.stringify(cart));
 }
 
 function loadCart() {
-  const saved = localStorage.getItem("oson_cart");
+  if (!user) return;
+  const saved = localStorage.getItem(`oson_cart_${user.id}`);
   if (saved) {
     Object.assign(cart, JSON.parse(saved));
   }
@@ -80,20 +90,42 @@ function removeFromCart(id) {
   }
 }
 
+async function verifyUser() {
+  const response = await fetch('/api/checkAuth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ initData: tg.initData })
+  });
+  const data = await response.json();
+  if (!data.success) {
+    alert("Ошибка проверки данных Telegram. Доступ запрещён.");
+    tg.close();
+    return false;
+  }
+  return true;
+}
+
 function checkout() {
   if (Object.keys(cart).length === 0) {
     alert("Корзина пуста.");
     return;
   }
-  if (Telegram.WebApp) {
-    Telegram.WebApp.sendData(JSON.stringify(cart));
-    Telegram.WebApp.close();
+  if (tg) {
+    const orderData = {
+      userId: user.id,
+      cart
+    };
+    tg.sendData(JSON.stringify(orderData));
+    tg.close();
   } else {
     alert("Telegram API недоступен. Корзина: " + JSON.stringify(cart));
   }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const verified = await verifyUser();
+  if (!verified) return;
+
   loadCart();
   const res = await fetch(API_URL);
   const data = await res.json();
