@@ -1,11 +1,64 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Маркетплейс</title>
-  </head>
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Маркетплейс — Ozon / Wildberries</title>
+  <style>
+    /* Минималистичный стиль, похожий на маркетплейсы */
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #fff;
+      color: #333;
+    }
+    header {
+      background-color: #00a650;
+      color: white;
+      padding: 12px 24px;
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .logo {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      cursor: pointer;
+    }
+    main {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 0 24px;
+    }
+    footer {
+      text-align: center;
+      padding: 24px 0;
+      font-size: 14px;
+      color: #777;
+      border-top: 1px solid #eee;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">MarketPlace</div>
+    <nav>
+      <a href="#" style="color: white; margin-right: 16px; text-decoration: none;">Главная</a>
+      <a href="#" style="color: white; margin-right: 16px; text-decoration: none;">Каталог</a>
+      <a href="#" style="color: white; text-decoration: none;">Корзина</a>
+    </nav>
+  </header>
+
+  <main>
     <div id="root"></div>
-  </body>
+  </main>
+
+  <footer>
+    &copy; 2025 MarketPlace — Все права защищены.
+  </footer>
+</body>
 </html>
